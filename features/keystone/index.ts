@@ -10,8 +10,16 @@ const databaseURL = process.env.DATABASE_URL || "file:./keystone.db";
 
 const sessionConfig = {
   maxAge: 60 * 60 * 24 * 360, // How long they stay signed in?
-  secret:
-    process.env.SESSION_SECRET || "this secret should only be used in testing",
+  secret: (() => {
+    const s = process.env.SESSION_SECRET;
+    if (!s || s.includes("testing") || s.includes("change-me")) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET must be set to a strong random value in production");
+      }
+      return "dev-only-insecure-session-secret-do-not-use-in-prod";
+    }
+    return s;
+  })(),
 };
 
 const {

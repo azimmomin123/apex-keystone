@@ -57,12 +57,17 @@ async function seed() {
   // Create admin user if none exists
   const userCount = await prisma.user.count();
   if (userCount === 0) {
-    const adminHash = await hashPassword("ApexAdmin2026!");
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!adminPassword) {
+      console.error("[seed] SEED_ADMIN_PASSWORD env var required for initial setup");
+      process.exit(1);
+    }
+    const adminHash = await hashPassword(adminPassword);
     await prisma.user.create({
       data: {
         id: crypto.randomUUID(),
         name: "Apex Admin",
-        email: "admin@apexrealtors.com",
+        email: process.env.SEED_ADMIN_EMAIL || "admin@apexrealtors.com",
         password: adminHash,
         phone: "",
         specialty: "",
@@ -72,7 +77,7 @@ async function seed() {
         role: { connect: { id: adminRole.id } },
       },
     });
-    console.log("[seed] Created admin: admin@apexrealtors.com / ApexAdmin2026!");
+    console.log("[seed] Created admin user: " + (process.env.SEED_ADMIN_EMAIL || "admin@apexrealtors.com"));
   }
 
   // Seed Agent records

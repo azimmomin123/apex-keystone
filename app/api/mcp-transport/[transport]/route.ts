@@ -14,6 +14,15 @@ import {
 } from 'graphql';
 import { getBaseUrl } from '@/features/dashboard/lib/getBaseUrl';
 
+const SAFE_GRAPHQL_PATTERN = /^[a-zA-Z0-9_ {}\n\r,():.!@\[\]]+$/;
+
+function sanitizeGraphQLInput(input: string, label: string): string {
+  if (!SAFE_GRAPHQL_PATTERN.test(input)) {
+    throw new Error(`Invalid characters in ${label}`);
+  }
+  return input;
+}
+
 // Get simple type name for display
 function getSimpleTypeName(type: any): string {
   if (isNonNullType(type)) {
@@ -67,6 +76,20 @@ async function getGraphQLSchema(graphqlEndpoint: string, cookie: string): Promis
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ transport: string }> }) {
+  // Auth gate: require either a valid Keystone session cookie or MCP API key
+  const mcpKey = process.env.MCP_API_KEY;
+  if (mcpKey) {
+    const authHeader = request.headers.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const cookie = request.headers.get("cookie") || "";
+    if (bearerToken !== mcpKey && !cookie.includes("keystonejs-session=")) {
+      return new Response(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Unauthorized" } }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   // Track if any CRUD operations occurred during this request
   let dataHasChanged = false;
   
@@ -352,7 +375,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         }
         
         if (name === 'queryData') {
-          const { operation, fields } = args;
+          const operation = sanitizeGraphQLInput(args.operation, "operation");
+          const fields = sanitizeGraphQLInput(args.fields, "fields");
           
           // Build a simple GraphQL query
           const queryString = `
@@ -603,7 +627,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         }
         
         if (name === 'createData') {
-          const { operation, data, fields } = args;
+          const operation = sanitizeGraphQLInput(args.operation, "operation");
+          const fields = sanitizeGraphQLInput(args.fields, "fields");
+          const { data } = args;
           
           // Parse the data JSON string
           const dataObject = JSON.parse(data);
@@ -641,7 +667,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         }
         
         if (name === 'updateData') {
-          const { operation, where, data, fields } = args;
+          const operation = sanitizeGraphQLInput(args.operation, "operation");
+          const fields = sanitizeGraphQLInput(args.fields, "fields");
+          const { where, data } = args;
           
           // Parse the JSON strings
           const whereObject = JSON.parse(where);
@@ -680,7 +708,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         }
         
         if (name === 'deleteData') {
-          const { operation, where, fields } = args;
+          const operation = sanitizeGraphQLInput(args.operation, "operation");
+          const fields = sanitizeGraphQLInput(args.fields, "fields");
+          const { where } = args;
           
           // Parse the where JSON string
           const whereObject = JSON.parse(where);
@@ -718,7 +748,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         }
         
         if (name === 'modelSpecificSearch') {
-          const { modelName, searchQuery, fields, limit = 10 } = args;
+          const modelName = sanitizeGraphQLInput(args.modelName, "modelName");
+          const searchQuery = sanitizeGraphQLInput(args.searchQuery, "searchQuery");
+          const fields = sanitizeGraphQLInput(args.fields, "fields");
+          const { limit = 10 } = args;
           
           // Get all types from schema to find the correct model
           const typeMap = schema.getTypeMap();
@@ -916,6 +949,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ transport: string }> }) {
+  // Auth gate
+  const mcpKey = process.env.MCP_API_KEY;
+  if (mcpKey) {
+    const authHeader = request.headers.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const cookie = request.headers.get("cookie") || "";
+    if (bearerToken !== mcpKey && !cookie.includes("keystonejs-session=")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   const { transport } = await params;
   
   const baseUrl = await getBaseUrl();

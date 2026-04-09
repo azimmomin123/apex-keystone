@@ -40,4 +40,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
+RUN addgroup --system app && adduser --system --ingroup app app
+RUN chown -R app:app /app
+USER app
+
 CMD ["sh", "-c", "npx prisma migrate deploy && node scripts/seed.mjs && npm start"]
