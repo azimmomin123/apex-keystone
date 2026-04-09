@@ -26,7 +26,7 @@ model User {
   passwordResetToken        String?
   passwordResetIssuedAt     DateTime?
   passwordResetRedeemedAt   DateTime?
-  from_Lead_assignedTo      Lead[]     @relation("Lead_assignedTo")
+  from_Agent_user           Agent[]    @relation("Agent_user")
   from_Property_agent       Property[] @relation("Property_agent")
   from_Activity_performedBy Activity[] @relation("Activity_performedBy")
 
@@ -46,6 +46,22 @@ model Role {
   assignedTo         User[]  @relation("User_role")
 }
 
+model Agent {
+  id         String  @id @default(cuid())
+  name       String  @default("")
+  email      String  @unique @default("")
+  phone      String  @default("")
+  specialty  String  @default("")
+  area       String  @default("")
+  telegramId String  @default("")
+  isActive   Boolean @default(true)
+  user       User?   @relation("Agent_user", fields: [userId], references: [id])
+  userId     String? @map("user")
+  leads      Lead[]  @relation("Lead_assignedTo")
+
+  @@index([userId])
+}
+
 model Lead {
   id           String     @id @default(cuid())
   name         String     @default("")
@@ -56,7 +72,7 @@ model Lead {
   priority     String?    @default("medium")
   budget       String     @default("")
   notes        String     @default("")
-  assignedTo   User?      @relation("Lead_assignedTo", fields: [assignedToId], references: [id])
+  assignedTo   Agent?     @relation("Lead_assignedTo", fields: [assignedToId], references: [id])
   assignedToId String?    @map("assignedTo")
   property     Property?  @relation("Lead_property", fields: [propertyId], references: [id])
   propertyId   String?    @map("property")

@@ -26,7 +26,7 @@ module.exports = __toCommonJS(keystone_exports);
 
 // features/keystone/index.ts
 var import_auth = require("@keystone-6/auth");
-var import_core6 = require("@keystone-6/core");
+var import_core7 = require("@keystone-6/core");
 var import_config = require("dotenv/config");
 
 // features/keystone/models/User.ts
@@ -170,14 +170,48 @@ var Role = (0, import_core2.list)({
   }
 });
 
-// features/keystone/models/Lead.ts
+// features/keystone/models/Agent.ts
 var import_core3 = require("@keystone-6/core");
 var import_access5 = require("@keystone-6/core/access");
 var import_fields3 = require("@keystone-6/core/fields");
-var Lead = (0, import_core3.list)({
+var Agent = (0, import_core3.list)({
   access: {
     operation: {
       ...(0, import_access5.allOperations)(isSignedIn)
+    }
+  },
+  ui: {
+    listView: {
+      initialColumns: ["name", "email", "phone", "specialty", "area", "isActive"]
+    }
+  },
+  fields: {
+    name: (0, import_fields3.text)({ validation: { isRequired: true } }),
+    email: (0, import_fields3.text)({ isIndexed: "unique", validation: { isRequired: true } }),
+    phone: (0, import_fields3.text)(),
+    specialty: (0, import_fields3.text)(),
+    area: (0, import_fields3.text)(),
+    telegramId: (0, import_fields3.text)(),
+    isActive: (0, import_fields3.checkbox)({ defaultValue: true }),
+    user: (0, import_fields3.relationship)({
+      ref: "User",
+      many: false
+    }),
+    leads: (0, import_fields3.relationship)({
+      ref: "Lead.assignedTo",
+      many: true
+    })
+  }
+});
+
+// features/keystone/models/Lead.ts
+var import_core4 = require("@keystone-6/core");
+var import_access7 = require("@keystone-6/core/access");
+var import_fields4 = require("@keystone-6/core/fields");
+var Lead = (0, import_core4.list)({
+  access: {
+    operation: {
+      ...(0, import_access7.allOperations)(isSignedIn)
     }
   },
   ui: {
@@ -186,10 +220,10 @@ var Lead = (0, import_core3.list)({
     }
   },
   fields: {
-    name: (0, import_fields3.text)({ validation: { isRequired: true } }),
-    email: (0, import_fields3.text)(),
-    phone: (0, import_fields3.text)(),
-    stage: (0, import_fields3.select)({
+    name: (0, import_fields4.text)({ validation: { isRequired: true } }),
+    email: (0, import_fields4.text)(),
+    phone: (0, import_fields4.text)(),
+    stage: (0, import_fields4.select)({
       type: "string",
       defaultValue: "new",
       options: [
@@ -204,7 +238,7 @@ var Lead = (0, import_core3.list)({
       ],
       ui: { displayMode: "segmented-control" }
     }),
-    source: (0, import_fields3.select)({
+    source: (0, import_fields4.select)({
       type: "string",
       defaultValue: "manual",
       options: [
@@ -216,7 +250,7 @@ var Lead = (0, import_core3.list)({
         { label: "Cold Call", value: "cold_call" }
       ]
     }),
-    priority: (0, import_fields3.select)({
+    priority: (0, import_fields4.select)({
       type: "string",
       defaultValue: "medium",
       options: [
@@ -226,35 +260,35 @@ var Lead = (0, import_core3.list)({
         { label: "Cold", value: "cold" }
       ]
     }),
-    budget: (0, import_fields3.text)(),
-    notes: (0, import_fields3.text)({ ui: { displayMode: "textarea" } }),
-    assignedTo: (0, import_fields3.relationship)({
-      ref: "User",
+    budget: (0, import_fields4.text)(),
+    notes: (0, import_fields4.text)({ ui: { displayMode: "textarea" } }),
+    assignedTo: (0, import_fields4.relationship)({
+      ref: "Agent.leads",
       many: false
     }),
-    property: (0, import_fields3.relationship)({
+    property: (0, import_fields4.relationship)({
       ref: "Property.leads",
       many: false
     }),
-    activities: (0, import_fields3.relationship)({
+    activities: (0, import_fields4.relationship)({
       ref: "Activity.lead",
       many: true
     }),
-    createdAt: (0, import_fields3.timestamp)({ defaultValue: { kind: "now" } }),
-    updatedAt: (0, import_fields3.timestamp)({
+    createdAt: (0, import_fields4.timestamp)({ defaultValue: { kind: "now" } }),
+    updatedAt: (0, import_fields4.timestamp)({
       db: { updatedAt: true }
     })
   }
 });
 
 // features/keystone/models/Property.ts
-var import_core4 = require("@keystone-6/core");
-var import_access7 = require("@keystone-6/core/access");
-var import_fields4 = require("@keystone-6/core/fields");
-var Property = (0, import_core4.list)({
+var import_core5 = require("@keystone-6/core");
+var import_access9 = require("@keystone-6/core/access");
+var import_fields5 = require("@keystone-6/core/fields");
+var Property = (0, import_core5.list)({
   access: {
     operation: {
-      ...(0, import_access7.allOperations)(isSignedIn)
+      ...(0, import_access9.allOperations)(isSignedIn)
     }
   },
   ui: {
@@ -263,11 +297,11 @@ var Property = (0, import_core4.list)({
     }
   },
   fields: {
-    address: (0, import_fields4.text)({ validation: { isRequired: true } }),
-    city: (0, import_fields4.text)(),
-    state: (0, import_fields4.text)(),
-    zip: (0, import_fields4.text)(),
-    type: (0, import_fields4.select)({
+    address: (0, import_fields5.text)({ validation: { isRequired: true } }),
+    city: (0, import_fields5.text)(),
+    state: (0, import_fields5.text)(),
+    zip: (0, import_fields5.text)(),
+    type: (0, import_fields5.select)({
       type: "string",
       defaultValue: "single_family",
       options: [
@@ -279,7 +313,7 @@ var Property = (0, import_core4.list)({
         { label: "Commercial", value: "commercial" }
       ]
     }),
-    status: (0, import_fields4.select)({
+    status: (0, import_fields5.select)({
       type: "string",
       defaultValue: "active",
       options: [
@@ -289,33 +323,33 @@ var Property = (0, import_core4.list)({
         { label: "Off Market", value: "off_market" }
       ]
     }),
-    price: (0, import_fields4.float)(),
-    bedrooms: (0, import_fields4.integer)(),
-    bathrooms: (0, import_fields4.float)(),
-    sqft: (0, import_fields4.integer)(),
-    yearBuilt: (0, import_fields4.integer)(),
-    description: (0, import_fields4.text)({ ui: { displayMode: "textarea" } }),
-    mlsNumber: (0, import_fields4.text)(),
-    agent: (0, import_fields4.relationship)({
+    price: (0, import_fields5.float)(),
+    bedrooms: (0, import_fields5.integer)(),
+    bathrooms: (0, import_fields5.float)(),
+    sqft: (0, import_fields5.integer)(),
+    yearBuilt: (0, import_fields5.integer)(),
+    description: (0, import_fields5.text)({ ui: { displayMode: "textarea" } }),
+    mlsNumber: (0, import_fields5.text)(),
+    agent: (0, import_fields5.relationship)({
       ref: "User",
       many: false
     }),
-    leads: (0, import_fields4.relationship)({
+    leads: (0, import_fields5.relationship)({
       ref: "Lead.property",
       many: true
     }),
-    createdAt: (0, import_fields4.timestamp)({ defaultValue: { kind: "now" } })
+    createdAt: (0, import_fields5.timestamp)({ defaultValue: { kind: "now" } })
   }
 });
 
 // features/keystone/models/Activity.ts
-var import_core5 = require("@keystone-6/core");
-var import_access9 = require("@keystone-6/core/access");
-var import_fields5 = require("@keystone-6/core/fields");
-var Activity = (0, import_core5.list)({
+var import_core6 = require("@keystone-6/core");
+var import_access11 = require("@keystone-6/core/access");
+var import_fields6 = require("@keystone-6/core/fields");
+var Activity = (0, import_core6.list)({
   access: {
     operation: {
-      ...(0, import_access9.allOperations)(isSignedIn)
+      ...(0, import_access11.allOperations)(isSignedIn)
     }
   },
   ui: {
@@ -324,7 +358,7 @@ var Activity = (0, import_core5.list)({
     }
   },
   fields: {
-    type: (0, import_fields5.select)({
+    type: (0, import_fields6.select)({
       type: "string",
       validation: { isRequired: true },
       options: [
@@ -342,17 +376,17 @@ var Activity = (0, import_core5.list)({
         { label: "Assignment Changed", value: "assignment_change" }
       ]
     }),
-    summary: (0, import_fields5.text)({ validation: { isRequired: true } }),
-    details: (0, import_fields5.text)({ ui: { displayMode: "textarea" } }),
-    lead: (0, import_fields5.relationship)({
+    summary: (0, import_fields6.text)({ validation: { isRequired: true } }),
+    details: (0, import_fields6.text)({ ui: { displayMode: "textarea" } }),
+    lead: (0, import_fields6.relationship)({
       ref: "Lead.activities",
       many: false
     }),
-    performedBy: (0, import_fields5.relationship)({
+    performedBy: (0, import_fields6.relationship)({
       ref: "User",
       many: false
     }),
-    createdAt: (0, import_fields5.timestamp)({ defaultValue: { kind: "now" } })
+    createdAt: (0, import_fields6.timestamp)({ defaultValue: { kind: "now" } })
   }
 });
 
@@ -360,6 +394,7 @@ var Activity = (0, import_core5.list)({
 var models = {
   User,
   Role,
+  Agent,
   Lead,
   Property,
   Activity
@@ -522,7 +557,7 @@ var { withAuth } = (0, import_auth.createAuth)({
   `
 });
 var keystone_default = withAuth(
-  (0, import_core6.config)({
+  (0, import_core7.config)({
     db: {
       provider: "postgresql",
       url: databaseURL

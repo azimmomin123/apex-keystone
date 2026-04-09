@@ -1,29 +1,13 @@
 /**
  * Auto-seed script — runs on container startup before Next.js.
- * Inserts agents if the User table is empty (fresh deploy).
- * Uses raw SQL via Prisma — no auth needed.
+ * Creates admin user, roles, and agents if the DB is fresh.
  */
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-// bcrypt-style hash not available without the lib, so we'll use Keystone's
-// password field which expects a bcrypt hash. We'll generate one with scrypt
-// and set a flag so users must reset. Actually, Keystone uses bcrypt from
-// @keystone-6/core internals. Let's just insert with a known bcrypt hash.
-// This is the bcrypt hash for "ApexAgent2026!"
-// We'll generate it inline.
-
 async function hashPassword(password) {
-  // Simple approach: use node's built-in scrypt won't work with Keystone's bcrypt.
-  // Instead, we'll use prisma's raw query after Keystone creates the admin.
-  // Better approach: skip password for seeded agents, admin creates them.
-  // Simplest: use a pre-computed bcrypt hash.
-
-  // Actually, let's use the approach of just inserting via Prisma raw SQL
-  // with Keystone's password hashing format. Keystone uses bcrypt from the
-  // 'bcryptjs' package which is in node_modules.
   const bcrypt = await import('bcryptjs');
   return bcrypt.default.hash(password, 10);
 }
@@ -51,17 +35,7 @@ const agents = [
 ];
 
 async function seed() {
-  // Check if users already exist (beyond the init admin)
-  const count = await prisma.user.count();
-  if (count > 1) {
-    console.log(`[seed] ${count} users already exist, skipping agent seed.`);
-    return;
-  }
-
-  console.log("[seed] Seeding agents...");
-  const passwordHash = await hashPassword("ApexAgent2026!");
-
-  // Create admin role if it doesn't exist
+  // Create admin role if missing
   let adminRole = await prisma.role.findFirst({ where: { name: "Admin" } });
   if (!adminRole) {
     adminRole = await prisma.role.create({
@@ -80,28 +54,9 @@ async function seed() {
     console.log("[seed] Created Admin role.");
   }
 
-  // Create agent role
-  let agentRole = await prisma.role.findFirst({ where: { name: "Agent" } });
-  if (!agentRole) {
-    agentRole = await prisma.role.create({
-      data: {
-        id: crypto.randomUUID(),
-        name: "Agent",
-        canManageLeads: true,
-        canManageAllLeads: false,
-        canSeeOtherPeople: true,
-        canEditOtherPeople: false,
-        canManagePeople: false,
-        canManageRoles: false,
-        canAccessDashboard: true,
-      },
-    });
-    console.log("[seed] Created Agent role.");
-  }
-
   // Create admin user if none exists
-  const adminExists = await prisma.user.count();
-  if (adminExists === 0) {
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
     const adminHash = await hashPassword("ApexAdmin2026!");
     await prisma.user.create({
       data: {
@@ -117,35 +72,34 @@ async function seed() {
         role: { connect: { id: adminRole.id } },
       },
     });
-    console.log("[seed] Created admin user: admin@apexrealtors.com / ApexAdmin2026!");
+    console.log("[seed] Created admin: admin@apexrealtors.com / ApexAdmin2026!");
   }
 
-  // Seed agents
-  for (const agent of agents) {
-    const exists = await prisma.user.findUnique({ where: { email: agent.email } });
-    if (exists) {
-      console.log(`[seed] ${agent.name} already exists, skipping.`);
-      continue;
-    }
+  // Seed Agent records
+  const agentCount = await prisma.agent.count();
+  if (agentCount > 0) {
+    console.log(`[seed] ${agentCount} agents already exist, skipping.`);
+    return;
+  }
 
-    await prisma.user.create({
+  console.log("[seed] Seeding agents...");
+  for (const a of agents) {
+    await prisma.agent.create({
       data: {
         id: crypto.randomUUID(),
-        name: agent.name,
-        email: agent.email,
-        password: passwordHash,
-        phone: agent.phone,
-        specialty: agent.specialty,
-        area: agent.area,
-        telegramId: agent.telegramId,
+        name: a.name,
+        email: a.email,
+        phone: a.phone,
+        specialty: a.specialty,
+        area: a.area,
+        telegramId: a.telegramId,
         isActive: true,
-        role: { connect: { id: agentRole.id } },
       },
     });
-    console.log(`[seed] Created agent: ${agent.name}`);
+    console.log(`[seed] Created agent: ${a.name}`);
   }
 
-  console.log("[seed] Done.");
+  console.log("[seed] Done — 19 agents created.");
 }
 
 seed()

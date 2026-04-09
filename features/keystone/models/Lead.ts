@@ -64,7 +64,7 @@ export const Lead = list({
     notes: text({ ui: { displayMode: 'textarea' } }),
 
     assignedTo: relationship({
-      ref: 'User',
+      ref: 'Agent.leads',
       many: false,
     }),
 

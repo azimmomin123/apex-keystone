@@ -265,6 +265,110 @@ input UserRelateToManyForCreateInput {
   connect: [UserWhereUniqueInput!]
 }
 
+type Agent {
+  id: ID!
+  name: String
+  email: String
+  phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
+  user: User
+  leads(where: LeadWhereInput! = {}, orderBy: [LeadOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LeadWhereUniqueInput): [Lead!]
+  leadsCount(where: LeadWhereInput! = {}): Int
+}
+
+input AgentWhereUniqueInput {
+  id: ID
+  email: String
+}
+
+input AgentWhereInput {
+  AND: [AgentWhereInput!]
+  OR: [AgentWhereInput!]
+  NOT: [AgentWhereInput!]
+  id: IDFilter
+  name: StringFilter
+  email: StringFilter
+  phone: StringFilter
+  specialty: StringFilter
+  area: StringFilter
+  telegramId: StringFilter
+  isActive: BooleanFilter
+  user: UserWhereInput
+  leads: LeadManyRelationFilter
+}
+
+input LeadManyRelationFilter {
+  every: LeadWhereInput
+  some: LeadWhereInput
+  none: LeadWhereInput
+}
+
+input AgentOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+  email: OrderDirection
+  phone: OrderDirection
+  specialty: OrderDirection
+  area: OrderDirection
+  telegramId: OrderDirection
+  isActive: OrderDirection
+}
+
+input AgentUpdateInput {
+  name: String
+  email: String
+  phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
+  user: UserRelateToOneForUpdateInput
+  leads: LeadRelateToManyForUpdateInput
+}
+
+input UserRelateToOneForUpdateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+  disconnect: Boolean
+}
+
+input LeadRelateToManyForUpdateInput {
+  disconnect: [LeadWhereUniqueInput!]
+  set: [LeadWhereUniqueInput!]
+  create: [LeadCreateInput!]
+  connect: [LeadWhereUniqueInput!]
+}
+
+input AgentUpdateArgs {
+  where: AgentWhereUniqueInput!
+  data: AgentUpdateInput!
+}
+
+input AgentCreateInput {
+  name: String
+  email: String
+  phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
+  user: UserRelateToOneForCreateInput
+  leads: LeadRelateToManyForCreateInput
+}
+
+input UserRelateToOneForCreateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input LeadRelateToManyForCreateInput {
+  create: [LeadCreateInput!]
+  connect: [LeadWhereUniqueInput!]
+}
+
 type Lead {
   id: ID!
   name: String
@@ -275,7 +379,7 @@ type Lead {
   priority: String
   budget: String
   notes: String
-  assignedTo: User
+  assignedTo: Agent
   property: Property
   activities(where: ActivityWhereInput! = {}, orderBy: [ActivityOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ActivityWhereUniqueInput): [Activity!]
   activitiesCount(where: ActivityWhereInput! = {}): Int
@@ -300,7 +404,7 @@ input LeadWhereInput {
   priority: StringNullableFilter
   budget: StringFilter
   notes: StringFilter
-  assignedTo: UserWhereInput
+  assignedTo: AgentWhereInput
   property: PropertyWhereInput
   activities: ActivityManyRelationFilter
   createdAt: DateTimeNullableFilter
@@ -351,16 +455,16 @@ input LeadUpdateInput {
   priority: String
   budget: String
   notes: String
-  assignedTo: UserRelateToOneForUpdateInput
+  assignedTo: AgentRelateToOneForUpdateInput
   property: PropertyRelateToOneForUpdateInput
   activities: ActivityRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
 
-input UserRelateToOneForUpdateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
+input AgentRelateToOneForUpdateInput {
+  create: AgentCreateInput
+  connect: AgentWhereUniqueInput
   disconnect: Boolean
 }
 
@@ -391,16 +495,16 @@ input LeadCreateInput {
   priority: String
   budget: String
   notes: String
-  assignedTo: UserRelateToOneForCreateInput
+  assignedTo: AgentRelateToOneForCreateInput
   property: PropertyRelateToOneForCreateInput
   activities: ActivityRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
 
-input UserRelateToOneForCreateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
+input AgentRelateToOneForCreateInput {
+  create: AgentCreateInput
+  connect: AgentWhereUniqueInput
 }
 
 input PropertyRelateToOneForCreateInput {
@@ -483,12 +587,6 @@ input IntNullableFilter {
   not: IntNullableFilter
 }
 
-input LeadManyRelationFilter {
-  every: LeadWhereInput
-  some: LeadWhereInput
-  none: LeadWhereInput
-}
-
 input PropertyOrderByInput {
   id: OrderDirection
   address: OrderDirection
@@ -526,13 +624,6 @@ input PropertyUpdateInput {
   createdAt: DateTime
 }
 
-input LeadRelateToManyForUpdateInput {
-  disconnect: [LeadWhereUniqueInput!]
-  set: [LeadWhereUniqueInput!]
-  create: [LeadCreateInput!]
-  connect: [LeadWhereUniqueInput!]
-}
-
 input PropertyUpdateArgs {
   where: PropertyWhereUniqueInput!
   data: PropertyUpdateInput!
@@ -555,11 +646,6 @@ input PropertyCreateInput {
   agent: UserRelateToOneForCreateInput
   leads: LeadRelateToManyForCreateInput
   createdAt: DateTime
-}
-
-input LeadRelateToManyForCreateInput {
-  create: [LeadCreateInput!]
-  connect: [LeadWhereUniqueInput!]
 }
 
 type Activity {
@@ -649,6 +735,12 @@ type Mutation {
   updateRoles(data: [RoleUpdateArgs!]!): [Role]
   deleteRole(where: RoleWhereUniqueInput!): Role
   deleteRoles(where: [RoleWhereUniqueInput!]!): [Role]
+  createAgent(data: AgentCreateInput!): Agent
+  createAgents(data: [AgentCreateInput!]!): [Agent]
+  updateAgent(where: AgentWhereUniqueInput!, data: AgentUpdateInput!): Agent
+  updateAgents(data: [AgentUpdateArgs!]!): [Agent]
+  deleteAgent(where: AgentWhereUniqueInput!): Agent
+  deleteAgents(where: [AgentWhereUniqueInput!]!): [Agent]
   createLead(data: LeadCreateInput!): Lead
   createLeads(data: [LeadCreateInput!]!): [Lead]
   updateLead(where: LeadWhereUniqueInput!, data: LeadUpdateInput!): Lead
@@ -709,6 +801,9 @@ type Query {
   role(where: RoleWhereUniqueInput!): Role
   roles(where: RoleWhereInput! = {}, orderBy: [RoleOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RoleWhereUniqueInput): [Role!]
   rolesCount(where: RoleWhereInput! = {}): Int
+  agent(where: AgentWhereUniqueInput!): Agent
+  agents(where: AgentWhereInput! = {}, orderBy: [AgentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AgentWhereUniqueInput): [Agent!]
+  agentsCount(where: AgentWhereInput! = {}): Int
   lead(where: LeadWhereUniqueInput!): Lead
   leads(where: LeadWhereInput! = {}, orderBy: [LeadOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LeadWhereUniqueInput): [Lead!]
   leadsCount(where: LeadWhereInput! = {}): Int
