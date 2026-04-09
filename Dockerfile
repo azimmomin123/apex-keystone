@@ -34,9 +34,10 @@ COPY --from=builder /app/keystone.ts ./keystone.ts
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/app ./app
+COPY --from=builder /app/scripts ./scripts
 
 ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node scripts/seed.mjs && npm start"]
