@@ -5,12 +5,12 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+# Use dummy URL for build-time schema generation (no DB connection needed)
+ENV DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
 
 RUN npx keystone build --no-ui
 RUN npx prisma generate
-RUN npm run build
+RUN npx next build
 
 FROM node:22-bookworm-slim AS production
 WORKDIR /app
