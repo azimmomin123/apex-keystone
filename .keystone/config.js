@@ -26,7 +26,7 @@ module.exports = __toCommonJS(keystone_exports);
 
 // features/keystone/index.ts
 var import_auth = require("@keystone-6/auth");
-var import_core5 = require("@keystone-6/core");
+var import_core6 = require("@keystone-6/core");
 var import_config = require("dotenv/config");
 
 // features/keystone/models/User.ts
@@ -39,30 +39,12 @@ function isSignedIn({ session }) {
   return Boolean(session);
 }
 var permissions = {
-  canCreateTodos: ({ session }) => session?.data.role?.canCreateTodos ?? false,
-  canManageAllTodos: ({ session }) => session?.data.role?.canManageAllTodos ?? false,
+  canManageLeads: ({ session }) => session?.data.role?.canManageLeads ?? false,
+  canManageAllLeads: ({ session }) => session?.data.role?.canManageAllLeads ?? false,
   canManagePeople: ({ session }) => session?.data.role?.canManagePeople ?? false,
   canManageRoles: ({ session }) => session?.data.role?.canManageRoles ?? false
 };
 var rules = {
-  canReadTodos: ({ session }) => {
-    if (!session) return false;
-    if (session.data.role?.canManageAllTodos) {
-      return {
-        OR: [
-          { assignedTo: { id: { equals: session.itemId } } },
-          { assignedTo: null, isPrivate: { equals: true } },
-          { NOT: { isPrivate: { equals: true } } }
-        ]
-      };
-    }
-    return { assignedTo: { id: { equals: session.itemId } } };
-  },
-  canManageTodos: ({ session }) => {
-    if (!session) return false;
-    if (session.data.role?.canManageAllTodos) return true;
-    return { assignedTo: { id: { equals: session.itemId } } };
-  },
   canReadPeople: ({ session }) => {
     if (!session) return false;
     if (session.data.role?.canSeeOtherPeople) return true;
@@ -140,20 +122,7 @@ var User = (0, import_core.list)({
         }
       }
     }),
-    tasks: (0, import_fields.relationship)({
-      ref: "Todo.assignedTo",
-      many: true,
-      access: {
-        create: permissions.canManageAllTodos,
-        update: ({ session, item }) => permissions.canManageAllTodos({ session }) || session?.itemId === item.id
-      },
-      ui: {
-        createView: {
-          fieldMode: (args) => permissions.canManageAllTodos(args) ? "edit" : "hidden"
-        }
-        // itemView: { fieldMode: 'read' },
-      }
-    })
+    phone: (0, import_fields.text)()
   }
 });
 
@@ -180,8 +149,8 @@ var Role = (0, import_core2.list)({
   },
   fields: {
     name: (0, import_fields2.text)({ validation: { isRequired: true } }),
-    canCreateTodos: (0, import_fields2.checkbox)({ defaultValue: false }),
-    canManageAllTodos: (0, import_fields2.checkbox)({ defaultValue: false }),
+    canManageLeads: (0, import_fields2.checkbox)({ defaultValue: false }),
+    canManageAllLeads: (0, import_fields2.checkbox)({ defaultValue: false }),
     canSeeOtherPeople: (0, import_fields2.checkbox)({ defaultValue: false }),
     canEditOtherPeople: (0, import_fields2.checkbox)({ defaultValue: false }),
     canManagePeople: (0, import_fields2.checkbox)({ defaultValue: false }),
@@ -197,195 +166,189 @@ var Role = (0, import_core2.list)({
   }
 });
 
-// features/keystone/models/Todo.ts
+// features/keystone/models/Lead.ts
 var import_core3 = require("@keystone-6/core");
 var import_access5 = require("@keystone-6/core/access");
 var import_fields3 = require("@keystone-6/core/fields");
-var import_fields_document = require("@keystone-6/fields-document");
-var Todo = (0, import_core3.list)({
+var Lead = (0, import_core3.list)({
   access: {
     operation: {
-      ...(0, import_access5.allOperations)(isSignedIn),
-      create: permissions.canCreateTodos
-    },
-    filter: {
-      query: rules.canReadTodos,
-      update: rules.canManageTodos,
-      delete: rules.canManageTodos
+      ...(0, import_access5.allOperations)(isSignedIn)
     }
   },
   ui: {
-    hideCreate: (args) => !permissions.canCreateTodos(args),
     listView: {
-      initialColumns: ["label", "tags", "isComplete", "assignedTo"]
+      initialColumns: ["name", "email", "phone", "stage", "assignedTo", "source"]
     }
   },
   fields: {
-    // Basic fields
-    label: (0, import_fields3.text)({ validation: { isRequired: true } }),
-    description: (0, import_fields_document.document)({
-      formatting: true,
-      links: true,
-      dividers: true,
-      layouts: [
-        [1, 1],
-        [1, 1, 1],
-        [2, 1]
+    name: (0, import_fields3.text)({ validation: { isRequired: true } }),
+    email: (0, import_fields3.text)(),
+    phone: (0, import_fields3.text)(),
+    stage: (0, import_fields3.select)({
+      type: "string",
+      defaultValue: "new",
+      options: [
+        { label: "New", value: "new" },
+        { label: "Contacted", value: "contacted" },
+        { label: "Qualified", value: "qualified" },
+        { label: "Showing", value: "showing" },
+        { label: "Offer", value: "offer" },
+        { label: "Closing", value: "closing" },
+        { label: "Won", value: "won" },
+        { label: "Lost", value: "lost" }
+      ],
+      ui: { displayMode: "segmented-control" }
+    }),
+    source: (0, import_fields3.select)({
+      type: "string",
+      defaultValue: "manual",
+      options: [
+        { label: "Manual", value: "manual" },
+        { label: "Email", value: "email" },
+        { label: "WhatsApp", value: "whatsapp" },
+        { label: "Website", value: "website" },
+        { label: "Referral", value: "referral" },
+        { label: "Cold Call", value: "cold_call" }
       ]
     }),
-    ...(0, import_core3.group)({
-      label: "Task Status",
-      description: "Track completion and status of the task",
-      fields: {
-        isComplete: (0, import_fields3.checkbox)({ defaultValue: false }),
-        status: (0, import_fields3.select)({
-          type: "string",
-          options: [
-            { label: "Todo", value: "todo" },
-            { label: "In Progress", value: "in_progress" },
-            { label: "Done", value: "done" },
-            { label: "Blocked", value: "blocked" }
-          ],
-          defaultValue: "todo"
-        }),
-        priority: (0, import_fields3.integer)({
-          defaultValue: 1,
-          validation: { min: 1, max: 5 },
-          label: "Priority (1-5)"
-        }),
-        tags: (0, import_fields3.multiselect)({
-          type: "string",
-          options: [
-            { label: "Frontend", value: "frontend" },
-            { label: "Backend", value: "backend" },
-            { label: "Database", value: "database" },
-            { label: "Testing", value: "testing" },
-            { label: "Documentation", value: "documentation" },
-            { label: "Bug Fix", value: "bug_fix" },
-            { label: "Feature", value: "feature" },
-            { label: "Urgent", value: "urgent" },
-            { label: "Nice to Have", value: "nice_to_have" }
-          ],
-          defaultValue: [],
-          label: "Tags"
-        })
-      }
+    priority: (0, import_fields3.select)({
+      type: "string",
+      defaultValue: "medium",
+      options: [
+        { label: "Hot", value: "hot" },
+        { label: "Warm", value: "warm" },
+        { label: "Medium", value: "medium" },
+        { label: "Cold", value: "cold" }
+      ]
     }),
-    ...(0, import_core3.group)({
-      label: "Planning & Budget",
-      description: "Schedule and resource allocation",
-      fields: {
-        dueDate: (0, import_fields3.timestamp)({
-          label: "Due Date"
-        }),
-        weight: (0, import_fields3.float)({
-          defaultValue: 1,
-          label: "Weight"
-        }),
-        budget: (0, import_fields3.decimal)({
-          precision: 10,
-          scale: 2,
-          defaultValue: "0.00",
-          label: "Budget"
-        })
-      }
-    }),
-    ...(0, import_core3.group)({
-      label: "Advanced Fields",
-      description: "Additional data and security settings",
-      fields: {
-        isPrivate: (0, import_fields3.checkbox)({ defaultValue: false }),
-        largeNumber: (0, import_fields3.bigInt)({
-          label: "Large Number Example",
-          ui: {
-            description: "Example field for testing BigInt values"
-          }
-        }),
-        metadata: (0, import_fields3.json)({
-          label: "Metadata"
-        }),
-        secretNote: (0, import_fields3.password)({
-          label: "Secret Note"
-        })
-      }
-    }),
-    ...(0, import_core3.group)({
-      label: "Attachments",
-      description: "File attachments for the task",
-      fields: {
-        coverImage: (0, import_fields3.image)({
-          storage: "my_images",
-          label: "Cover Image"
-        }),
-        todoImages: (0, import_fields3.relationship)({
-          ref: "TodoImage.todos",
-          many: true,
-          ui: {
-            displayMode: "cards",
-            cardFields: ["image", "altText", "imagePath"],
-            inlineCreate: { fields: ["image", "altText", "imagePath"] },
-            inlineEdit: { fields: ["image", "altText", "imagePath"] },
-            inlineConnect: true,
-            removeMode: "disconnect",
-            linkToItem: false
-          }
-        })
-      }
-    }),
-    // Virtual field - requires graphql import for proper setup
-    // Let's comment this out for now to avoid complexity
-    // displayName: virtual({
-    //   field: graphql.field({
-    //     type: graphql.String,
-    //     resolve: (item: any) => `${item.label} (${item.status || 'unknown'})`
-    //   })
-    // }),
-    // Relationship field
+    budget: (0, import_fields3.text)(),
+    notes: (0, import_fields3.text)({ ui: { displayMode: "textarea" } }),
     assignedTo: (0, import_fields3.relationship)({
-      ref: "User.tasks",
-      ui: {
-        createView: {
-          fieldMode: (args) => permissions.canManageAllTodos(args) ? "edit" : "hidden"
-        },
-        itemView: {
-          fieldMode: (args) => permissions.canManageAllTodos(args) ? "edit" : "read"
-        }
-      },
-      hooks: {
-        resolveInput({ operation, resolvedData, context }) {
-          if (operation === "create" && !resolvedData.assignedTo && context.session?.itemId) {
-            return { connect: { id: context.session?.itemId } };
-          }
-          return resolvedData.assignedTo;
-        }
-      }
+      ref: "User",
+      many: false
+    }),
+    property: (0, import_fields3.relationship)({
+      ref: "Property.leads",
+      many: false
+    }),
+    activities: (0, import_fields3.relationship)({
+      ref: "Activity.lead",
+      many: true
+    }),
+    createdAt: (0, import_fields3.timestamp)({ defaultValue: { kind: "now" } }),
+    updatedAt: (0, import_fields3.timestamp)({
+      db: { updatedAt: true }
     })
   }
 });
 
-// features/keystone/models/TodoImage.ts
+// features/keystone/models/Property.ts
 var import_core4 = require("@keystone-6/core");
+var import_access7 = require("@keystone-6/core/access");
 var import_fields4 = require("@keystone-6/core/fields");
-var TodoImage = (0, import_core4.list)({
+var Property = (0, import_core4.list)({
   access: {
     operation: {
-      query: isSignedIn,
-      create: permissions.canCreateTodos,
-      update: permissions.canCreateTodos,
-      delete: permissions.canCreateTodos
+      ...(0, import_access7.allOperations)(isSignedIn)
     }
-  },
-  fields: {
-    image: (0, import_fields4.image)({ storage: "my_images" }),
-    imagePath: (0, import_fields4.text)(),
-    altText: (0, import_fields4.text)(),
-    todos: (0, import_fields4.relationship)({ ref: "Todo.todoImages", many: true }),
-    metadata: (0, import_fields4.json)()
   },
   ui: {
     listView: {
-      initialColumns: ["image", "imagePath", "altText", "todos"]
+      initialColumns: ["address", "type", "price", "status", "bedrooms"]
     }
+  },
+  fields: {
+    address: (0, import_fields4.text)({ validation: { isRequired: true } }),
+    city: (0, import_fields4.text)(),
+    state: (0, import_fields4.text)(),
+    zip: (0, import_fields4.text)(),
+    type: (0, import_fields4.select)({
+      type: "string",
+      defaultValue: "single_family",
+      options: [
+        { label: "Single Family", value: "single_family" },
+        { label: "Condo", value: "condo" },
+        { label: "Townhouse", value: "townhouse" },
+        { label: "Multi-Family", value: "multi_family" },
+        { label: "Land", value: "land" },
+        { label: "Commercial", value: "commercial" }
+      ]
+    }),
+    status: (0, import_fields4.select)({
+      type: "string",
+      defaultValue: "active",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Pending", value: "pending" },
+        { label: "Sold", value: "sold" },
+        { label: "Off Market", value: "off_market" }
+      ]
+    }),
+    price: (0, import_fields4.float)(),
+    bedrooms: (0, import_fields4.integer)(),
+    bathrooms: (0, import_fields4.float)(),
+    sqft: (0, import_fields4.integer)(),
+    yearBuilt: (0, import_fields4.integer)(),
+    description: (0, import_fields4.text)({ ui: { displayMode: "textarea" } }),
+    mlsNumber: (0, import_fields4.text)(),
+    agent: (0, import_fields4.relationship)({
+      ref: "User",
+      many: false
+    }),
+    leads: (0, import_fields4.relationship)({
+      ref: "Lead.property",
+      many: true
+    }),
+    createdAt: (0, import_fields4.timestamp)({ defaultValue: { kind: "now" } })
+  }
+});
+
+// features/keystone/models/Activity.ts
+var import_core5 = require("@keystone-6/core");
+var import_access9 = require("@keystone-6/core/access");
+var import_fields5 = require("@keystone-6/core/fields");
+var Activity = (0, import_core5.list)({
+  access: {
+    operation: {
+      ...(0, import_access9.allOperations)(isSignedIn)
+    }
+  },
+  ui: {
+    listView: {
+      initialColumns: ["type", "lead", "summary", "performedBy", "createdAt"]
+    }
+  },
+  fields: {
+    type: (0, import_fields5.select)({
+      type: "string",
+      validation: { isRequired: true },
+      options: [
+        { label: "Email Sent", value: "email_sent" },
+        { label: "Email Received", value: "email_received" },
+        { label: "Call Made", value: "call_made" },
+        { label: "Call Received", value: "call_received" },
+        { label: "WhatsApp Sent", value: "whatsapp_sent" },
+        { label: "WhatsApp Received", value: "whatsapp_received" },
+        { label: "Showing Scheduled", value: "showing_scheduled" },
+        { label: "Showing Completed", value: "showing_completed" },
+        { label: "Offer Made", value: "offer_made" },
+        { label: "Note Added", value: "note" },
+        { label: "Stage Changed", value: "stage_change" },
+        { label: "Assignment Changed", value: "assignment_change" }
+      ]
+    }),
+    summary: (0, import_fields5.text)({ validation: { isRequired: true } }),
+    details: (0, import_fields5.text)({ ui: { displayMode: "textarea" } }),
+    lead: (0, import_fields5.relationship)({
+      ref: "Lead.activities",
+      many: false
+    }),
+    performedBy: (0, import_fields5.relationship)({
+      ref: "User",
+      many: false
+    }),
+    createdAt: (0, import_fields5.timestamp)({ defaultValue: { kind: "now" } })
   }
 });
 
@@ -393,8 +356,9 @@ var TodoImage = (0, import_core4.list)({
 var models = {
   User,
   Role,
-  Todo,
-  TodoImage
+  Lead,
+  Property,
+  Activity
 };
 
 // features/keystone/index.ts
@@ -521,8 +485,8 @@ var { withAuth } = (0, import_auth.createAuth)({
       role: {
         create: {
           name: "Admin",
-          canCreateTodos: true,
-          canManageAllTodos: true,
+          canManageLeads: true,
+          canManageAllLeads: true,
           canSeeOtherPeople: true,
           canEditOtherPeople: true,
           canManagePeople: true,
@@ -543,8 +507,8 @@ var { withAuth } = (0, import_auth.createAuth)({
     role {
       id
       name
-      canCreateTodos
-      canManageAllTodos
+      canManageLeads
+      canManageAllLeads
       canSeeOtherPeople
       canEditOtherPeople
       canManagePeople
@@ -554,7 +518,7 @@ var { withAuth } = (0, import_auth.createAuth)({
   `
 });
 var keystone_default = withAuth(
-  (0, import_core5.config)({
+  (0, import_core6.config)({
     db: {
       provider: "postgresql",
       url: databaseURL

@@ -7,8 +7,7 @@ type User {
   email: String
   password: PasswordState
   role: Role
-  tasks(where: TodoWhereInput! = {}, orderBy: [TodoOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TodoWhereUniqueInput): [Todo!]
-  tasksCount(where: TodoWhereInput! = {}): Int
+  phone: String
   passwordResetToken: PasswordState
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -31,7 +30,7 @@ input UserWhereInput {
   id: IDFilter
   name: StringFilter
   role: RoleWhereInput
-  tasks: TodoManyRelationFilter
+  phone: StringFilter
   passwordResetToken: PasswordFilter
   passwordResetIssuedAt: DateTimeNullableFilter
   passwordResetRedeemedAt: DateTimeNullableFilter
@@ -82,12 +81,6 @@ input NestedStringFilter {
   not: NestedStringFilter
 }
 
-input TodoManyRelationFilter {
-  every: TodoWhereInput
-  some: TodoWhereInput
-  none: TodoWhereInput
-}
-
 input PasswordFilter {
   isSet: Boolean!
 }
@@ -106,6 +99,7 @@ input DateTimeNullableFilter {
 input UserOrderByInput {
   id: OrderDirection
   name: OrderDirection
+  phone: OrderDirection
   passwordResetIssuedAt: OrderDirection
   passwordResetRedeemedAt: OrderDirection
 }
@@ -120,7 +114,7 @@ input UserUpdateInput {
   email: String
   password: String
   role: RoleRelateToOneForUpdateInput
-  tasks: TodoRelateToManyForUpdateInput
+  phone: String
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -130,13 +124,6 @@ input RoleRelateToOneForUpdateInput {
   create: RoleCreateInput
   connect: RoleWhereUniqueInput
   disconnect: Boolean
-}
-
-input TodoRelateToManyForUpdateInput {
-  disconnect: [TodoWhereUniqueInput!]
-  set: [TodoWhereUniqueInput!]
-  create: [TodoCreateInput!]
-  connect: [TodoWhereUniqueInput!]
 }
 
 input UserUpdateArgs {
@@ -149,7 +136,7 @@ input UserCreateInput {
   email: String
   password: String
   role: RoleRelateToOneForCreateInput
-  tasks: TodoRelateToManyForCreateInput
+  phone: String
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -160,16 +147,11 @@ input RoleRelateToOneForCreateInput {
   connect: RoleWhereUniqueInput
 }
 
-input TodoRelateToManyForCreateInput {
-  create: [TodoCreateInput!]
-  connect: [TodoWhereUniqueInput!]
-}
-
 type Role {
   id: ID!
   name: String
-  canCreateTodos: Boolean
-  canManageAllTodos: Boolean
+  canManageLeads: Boolean
+  canManageAllLeads: Boolean
   canSeeOtherPeople: Boolean
   canEditOtherPeople: Boolean
   canManagePeople: Boolean
@@ -189,8 +171,8 @@ input RoleWhereInput {
   NOT: [RoleWhereInput!]
   id: IDFilter
   name: StringFilter
-  canCreateTodos: BooleanFilter
-  canManageAllTodos: BooleanFilter
+  canManageLeads: BooleanFilter
+  canManageAllLeads: BooleanFilter
   canSeeOtherPeople: BooleanFilter
   canEditOtherPeople: BooleanFilter
   canManagePeople: BooleanFilter
@@ -213,8 +195,8 @@ input UserManyRelationFilter {
 input RoleOrderByInput {
   id: OrderDirection
   name: OrderDirection
-  canCreateTodos: OrderDirection
-  canManageAllTodos: OrderDirection
+  canManageLeads: OrderDirection
+  canManageAllLeads: OrderDirection
   canSeeOtherPeople: OrderDirection
   canEditOtherPeople: OrderDirection
   canManagePeople: OrderDirection
@@ -224,8 +206,8 @@ input RoleOrderByInput {
 
 input RoleUpdateInput {
   name: String
-  canCreateTodos: Boolean
-  canManageAllTodos: Boolean
+  canManageLeads: Boolean
+  canManageAllLeads: Boolean
   canSeeOtherPeople: Boolean
   canEditOtherPeople: Boolean
   canManagePeople: Boolean
@@ -248,8 +230,8 @@ input RoleUpdateArgs {
 
 input RoleCreateInput {
   name: String
-  canCreateTodos: Boolean
-  canManageAllTodos: Boolean
+  canManageLeads: Boolean
+  canManageAllLeads: Boolean
   canSeeOtherPeople: Boolean
   canEditOtherPeople: Boolean
   canManagePeople: Boolean
@@ -263,72 +245,46 @@ input UserRelateToManyForCreateInput {
   connect: [UserWhereUniqueInput!]
 }
 
-type Todo {
+type Lead {
   id: ID!
-  label: String
-  description: Todo_description_Document
-  isComplete: Boolean
-  status: String
-  priority: Int
-  tags: [String!]
-  dueDate: DateTime
-  weight: Float
-  budget: Decimal
-  isPrivate: Boolean
-  largeNumber: BigInt
-  metadata: JSON
-  secretNote: PasswordState
-  coverImage: ImageFieldOutput
-  todoImages(where: TodoImageWhereInput! = {}, orderBy: [TodoImageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TodoImageWhereUniqueInput): [TodoImage!]
-  todoImagesCount(where: TodoImageWhereInput! = {}): Int
+  name: String
+  email: String
+  phone: String
+  stage: String
+  source: String
+  priority: String
+  budget: String
+  notes: String
   assignedTo: User
+  property: Property
+  activities(where: ActivityWhereInput! = {}, orderBy: [ActivityOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ActivityWhereUniqueInput): [Activity!]
+  activitiesCount(where: ActivityWhereInput! = {}): Int
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
-type Todo_description_Document {
-  document(hydrateRelationships: Boolean! = false): JSON!
-}
-
-scalar Decimal
-
-scalar BigInt
-
-type ImageFieldOutput {
-  id: ID!
-  filesize: Int!
-  width: Int!
-  height: Int!
-  extension: ImageExtension!
-  url: String!
-}
-
-enum ImageExtension {
-  jpg
-  png
-  webp
-  gif
-}
-
-input TodoWhereUniqueInput {
+input LeadWhereUniqueInput {
   id: ID
 }
 
-input TodoWhereInput {
-  AND: [TodoWhereInput!]
-  OR: [TodoWhereInput!]
-  NOT: [TodoWhereInput!]
+input LeadWhereInput {
+  AND: [LeadWhereInput!]
+  OR: [LeadWhereInput!]
+  NOT: [LeadWhereInput!]
   id: IDFilter
-  label: StringFilter
-  isComplete: BooleanFilter
-  status: StringNullableFilter
-  priority: IntNullableFilter
-  dueDate: DateTimeNullableFilter
-  weight: FloatNullableFilter
-  budget: DecimalNullableFilter
-  isPrivate: BooleanFilter
-  largeNumber: BigIntNullableFilter
-  secretNote: PasswordFilter
-  todoImages: TodoImageManyRelationFilter
+  name: StringFilter
+  email: StringFilter
+  phone: StringFilter
+  stage: StringNullableFilter
+  source: StringNullableFilter
+  priority: StringNullableFilter
+  budget: StringFilter
+  notes: StringFilter
   assignedTo: UserWhereInput
+  property: PropertyWhereInput
+  activities: ActivityManyRelationFilter
+  createdAt: DateTimeNullableFilter
+  updatedAt: DateTimeNullableFilter
 }
 
 input StringNullableFilter {
@@ -346,15 +302,143 @@ input StringNullableFilter {
   not: StringNullableFilter
 }
 
-input IntNullableFilter {
-  equals: Int
-  in: [Int!]
-  notIn: [Int!]
-  lt: Int
-  lte: Int
-  gt: Int
-  gte: Int
-  not: IntNullableFilter
+input ActivityManyRelationFilter {
+  every: ActivityWhereInput
+  some: ActivityWhereInput
+  none: ActivityWhereInput
+}
+
+input LeadOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+  email: OrderDirection
+  phone: OrderDirection
+  stage: OrderDirection
+  source: OrderDirection
+  priority: OrderDirection
+  budget: OrderDirection
+  notes: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input LeadUpdateInput {
+  name: String
+  email: String
+  phone: String
+  stage: String
+  source: String
+  priority: String
+  budget: String
+  notes: String
+  assignedTo: UserRelateToOneForUpdateInput
+  property: PropertyRelateToOneForUpdateInput
+  activities: ActivityRelateToManyForUpdateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input UserRelateToOneForUpdateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+  disconnect: Boolean
+}
+
+input PropertyRelateToOneForUpdateInput {
+  create: PropertyCreateInput
+  connect: PropertyWhereUniqueInput
+  disconnect: Boolean
+}
+
+input ActivityRelateToManyForUpdateInput {
+  disconnect: [ActivityWhereUniqueInput!]
+  set: [ActivityWhereUniqueInput!]
+  create: [ActivityCreateInput!]
+  connect: [ActivityWhereUniqueInput!]
+}
+
+input LeadUpdateArgs {
+  where: LeadWhereUniqueInput!
+  data: LeadUpdateInput!
+}
+
+input LeadCreateInput {
+  name: String
+  email: String
+  phone: String
+  stage: String
+  source: String
+  priority: String
+  budget: String
+  notes: String
+  assignedTo: UserRelateToOneForCreateInput
+  property: PropertyRelateToOneForCreateInput
+  activities: ActivityRelateToManyForCreateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input UserRelateToOneForCreateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input PropertyRelateToOneForCreateInput {
+  create: PropertyCreateInput
+  connect: PropertyWhereUniqueInput
+}
+
+input ActivityRelateToManyForCreateInput {
+  create: [ActivityCreateInput!]
+  connect: [ActivityWhereUniqueInput!]
+}
+
+type Property {
+  id: ID!
+  address: String
+  city: String
+  state: String
+  zip: String
+  type: String
+  status: String
+  price: Float
+  bedrooms: Int
+  bathrooms: Float
+  sqft: Int
+  yearBuilt: Int
+  description: String
+  mlsNumber: String
+  agent: User
+  leads(where: LeadWhereInput! = {}, orderBy: [LeadOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LeadWhereUniqueInput): [Lead!]
+  leadsCount(where: LeadWhereInput! = {}): Int
+  createdAt: DateTime
+}
+
+input PropertyWhereUniqueInput {
+  id: ID
+}
+
+input PropertyWhereInput {
+  AND: [PropertyWhereInput!]
+  OR: [PropertyWhereInput!]
+  NOT: [PropertyWhereInput!]
+  id: IDFilter
+  address: StringFilter
+  city: StringFilter
+  state: StringFilter
+  zip: StringFilter
+  type: StringNullableFilter
+  status: StringNullableFilter
+  price: FloatNullableFilter
+  bedrooms: IntNullableFilter
+  bathrooms: FloatNullableFilter
+  sqft: IntNullableFilter
+  yearBuilt: IntNullableFilter
+  description: StringFilter
+  mlsNumber: StringFilter
+  agent: UserWhereInput
+  leads: LeadManyRelationFilter
+  createdAt: DateTimeNullableFilter
 }
 
 input FloatNullableFilter {
@@ -368,169 +452,163 @@ input FloatNullableFilter {
   not: FloatNullableFilter
 }
 
-input DecimalNullableFilter {
-  equals: Decimal
-  in: [Decimal!]
-  notIn: [Decimal!]
-  lt: Decimal
-  lte: Decimal
-  gt: Decimal
-  gte: Decimal
-  not: DecimalNullableFilter
+input IntNullableFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: IntNullableFilter
 }
 
-input BigIntNullableFilter {
-  equals: BigInt
-  in: [BigInt!]
-  notIn: [BigInt!]
-  lt: BigInt
-  lte: BigInt
-  gt: BigInt
-  gte: BigInt
-  not: BigIntNullableFilter
+input LeadManyRelationFilter {
+  every: LeadWhereInput
+  some: LeadWhereInput
+  none: LeadWhereInput
 }
 
-input TodoImageManyRelationFilter {
-  every: TodoImageWhereInput
-  some: TodoImageWhereInput
-  none: TodoImageWhereInput
-}
-
-input TodoOrderByInput {
+input PropertyOrderByInput {
   id: OrderDirection
-  label: OrderDirection
-  isComplete: OrderDirection
+  address: OrderDirection
+  city: OrderDirection
+  state: OrderDirection
+  zip: OrderDirection
+  type: OrderDirection
   status: OrderDirection
-  priority: OrderDirection
-  dueDate: OrderDirection
-  weight: OrderDirection
-  budget: OrderDirection
-  isPrivate: OrderDirection
-  largeNumber: OrderDirection
+  price: OrderDirection
+  bedrooms: OrderDirection
+  bathrooms: OrderDirection
+  sqft: OrderDirection
+  yearBuilt: OrderDirection
+  description: OrderDirection
+  mlsNumber: OrderDirection
+  createdAt: OrderDirection
 }
 
-input TodoUpdateInput {
-  label: String
-  description: JSON
-  isComplete: Boolean
+input PropertyUpdateInput {
+  address: String
+  city: String
+  state: String
+  zip: String
+  type: String
   status: String
-  priority: Int
-  tags: [String!]
-  dueDate: DateTime
-  weight: Float
-  budget: Decimal
-  isPrivate: Boolean
-  largeNumber: BigInt
-  metadata: JSON
-  secretNote: String
-  coverImage: ImageFieldInput
-  todoImages: TodoImageRelateToManyForUpdateInput
-  assignedTo: UserRelateToOneForUpdateInput
+  price: Float
+  bedrooms: Int
+  bathrooms: Float
+  sqft: Int
+  yearBuilt: Int
+  description: String
+  mlsNumber: String
+  agent: UserRelateToOneForUpdateInput
+  leads: LeadRelateToManyForUpdateInput
+  createdAt: DateTime
 }
 
-input ImageFieldInput {
-  upload: Upload!
+input LeadRelateToManyForUpdateInput {
+  disconnect: [LeadWhereUniqueInput!]
+  set: [LeadWhereUniqueInput!]
+  create: [LeadCreateInput!]
+  connect: [LeadWhereUniqueInput!]
 }
 
-"""The `Upload` scalar type represents a file upload."""
-scalar Upload
-
-input TodoImageRelateToManyForUpdateInput {
-  disconnect: [TodoImageWhereUniqueInput!]
-  set: [TodoImageWhereUniqueInput!]
-  create: [TodoImageCreateInput!]
-  connect: [TodoImageWhereUniqueInput!]
+input PropertyUpdateArgs {
+  where: PropertyWhereUniqueInput!
+  data: PropertyUpdateInput!
 }
 
-input UserRelateToOneForUpdateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
-  disconnect: Boolean
-}
-
-input TodoUpdateArgs {
-  where: TodoWhereUniqueInput!
-  data: TodoUpdateInput!
-}
-
-input TodoCreateInput {
-  label: String
-  description: JSON
-  isComplete: Boolean
+input PropertyCreateInput {
+  address: String
+  city: String
+  state: String
+  zip: String
+  type: String
   status: String
-  priority: Int
-  tags: [String!]
-  dueDate: DateTime
-  weight: Float
-  budget: Decimal
-  isPrivate: Boolean
-  largeNumber: BigInt
-  metadata: JSON
-  secretNote: String
-  coverImage: ImageFieldInput
-  todoImages: TodoImageRelateToManyForCreateInput
-  assignedTo: UserRelateToOneForCreateInput
+  price: Float
+  bedrooms: Int
+  bathrooms: Float
+  sqft: Int
+  yearBuilt: Int
+  description: String
+  mlsNumber: String
+  agent: UserRelateToOneForCreateInput
+  leads: LeadRelateToManyForCreateInput
+  createdAt: DateTime
 }
 
-input TodoImageRelateToManyForCreateInput {
-  create: [TodoImageCreateInput!]
-  connect: [TodoImageWhereUniqueInput!]
+input LeadRelateToManyForCreateInput {
+  create: [LeadCreateInput!]
+  connect: [LeadWhereUniqueInput!]
 }
 
-input UserRelateToOneForCreateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
-}
-
-type TodoImage {
+type Activity {
   id: ID!
-  image: ImageFieldOutput
-  imagePath: String
-  altText: String
-  todos(where: TodoWhereInput! = {}, orderBy: [TodoOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TodoWhereUniqueInput): [Todo!]
-  todosCount(where: TodoWhereInput! = {}): Int
-  metadata: JSON
+  type: String
+  summary: String
+  details: String
+  lead: Lead
+  performedBy: User
+  createdAt: DateTime
 }
 
-input TodoImageWhereUniqueInput {
+input ActivityWhereUniqueInput {
   id: ID
 }
 
-input TodoImageWhereInput {
-  AND: [TodoImageWhereInput!]
-  OR: [TodoImageWhereInput!]
-  NOT: [TodoImageWhereInput!]
+input ActivityWhereInput {
+  AND: [ActivityWhereInput!]
+  OR: [ActivityWhereInput!]
+  NOT: [ActivityWhereInput!]
   id: IDFilter
-  imagePath: StringFilter
-  altText: StringFilter
-  todos: TodoManyRelationFilter
+  type: StringFilter
+  summary: StringFilter
+  details: StringFilter
+  lead: LeadWhereInput
+  performedBy: UserWhereInput
+  createdAt: DateTimeNullableFilter
 }
 
-input TodoImageOrderByInput {
+input ActivityOrderByInput {
   id: OrderDirection
-  imagePath: OrderDirection
-  altText: OrderDirection
+  type: OrderDirection
+  summary: OrderDirection
+  details: OrderDirection
+  createdAt: OrderDirection
 }
 
-input TodoImageUpdateInput {
-  image: ImageFieldInput
-  imagePath: String
-  altText: String
-  todos: TodoRelateToManyForUpdateInput
-  metadata: JSON
+input ActivityUpdateInput {
+  type: String
+  summary: String
+  details: String
+  lead: LeadRelateToOneForUpdateInput
+  performedBy: UserRelateToOneForUpdateInput
+  createdAt: DateTime
 }
 
-input TodoImageUpdateArgs {
-  where: TodoImageWhereUniqueInput!
-  data: TodoImageUpdateInput!
+input LeadRelateToOneForUpdateInput {
+  create: LeadCreateInput
+  connect: LeadWhereUniqueInput
+  disconnect: Boolean
 }
 
-input TodoImageCreateInput {
-  image: ImageFieldInput
-  imagePath: String
-  altText: String
-  todos: TodoRelateToManyForCreateInput
-  metadata: JSON
+input ActivityUpdateArgs {
+  where: ActivityWhereUniqueInput!
+  data: ActivityUpdateInput!
+}
+
+input ActivityCreateInput {
+  type: String
+  summary: String
+  details: String
+  lead: LeadRelateToOneForCreateInput
+  performedBy: UserRelateToOneForCreateInput
+  createdAt: DateTime
+}
+
+input LeadRelateToOneForCreateInput {
+  create: LeadCreateInput
+  connect: LeadWhereUniqueInput
 }
 
 """
@@ -551,18 +629,24 @@ type Mutation {
   updateRoles(data: [RoleUpdateArgs!]!): [Role]
   deleteRole(where: RoleWhereUniqueInput!): Role
   deleteRoles(where: [RoleWhereUniqueInput!]!): [Role]
-  createTodo(data: TodoCreateInput!): Todo
-  createTodos(data: [TodoCreateInput!]!): [Todo]
-  updateTodo(where: TodoWhereUniqueInput!, data: TodoUpdateInput!): Todo
-  updateTodos(data: [TodoUpdateArgs!]!): [Todo]
-  deleteTodo(where: TodoWhereUniqueInput!): Todo
-  deleteTodos(where: [TodoWhereUniqueInput!]!): [Todo]
-  createTodoImage(data: TodoImageCreateInput!): TodoImage
-  createTodoImages(data: [TodoImageCreateInput!]!): [TodoImage]
-  updateTodoImage(where: TodoImageWhereUniqueInput!, data: TodoImageUpdateInput!): TodoImage
-  updateTodoImages(data: [TodoImageUpdateArgs!]!): [TodoImage]
-  deleteTodoImage(where: TodoImageWhereUniqueInput!): TodoImage
-  deleteTodoImages(where: [TodoImageWhereUniqueInput!]!): [TodoImage]
+  createLead(data: LeadCreateInput!): Lead
+  createLeads(data: [LeadCreateInput!]!): [Lead]
+  updateLead(where: LeadWhereUniqueInput!, data: LeadUpdateInput!): Lead
+  updateLeads(data: [LeadUpdateArgs!]!): [Lead]
+  deleteLead(where: LeadWhereUniqueInput!): Lead
+  deleteLeads(where: [LeadWhereUniqueInput!]!): [Lead]
+  createProperty(data: PropertyCreateInput!): Property
+  createProperties(data: [PropertyCreateInput!]!): [Property]
+  updateProperty(where: PropertyWhereUniqueInput!, data: PropertyUpdateInput!): Property
+  updateProperties(data: [PropertyUpdateArgs!]!): [Property]
+  deleteProperty(where: PropertyWhereUniqueInput!): Property
+  deleteProperties(where: [PropertyWhereUniqueInput!]!): [Property]
+  createActivity(data: ActivityCreateInput!): Activity
+  createActivities(data: [ActivityCreateInput!]!): [Activity]
+  updateActivity(where: ActivityWhereUniqueInput!, data: ActivityUpdateInput!): Activity
+  updateActivities(data: [ActivityUpdateArgs!]!): [Activity]
+  deleteActivity(where: ActivityWhereUniqueInput!): Activity
+  deleteActivities(where: [ActivityWhereUniqueInput!]!): [Activity]
   endSession: Boolean!
   authenticateUserWithPassword(email: String!, password: String!): UserAuthenticationWithPasswordResult
   createInitialUser(data: CreateInitialUserInput!): UserAuthenticationWithPasswordSuccess!
@@ -605,12 +689,15 @@ type Query {
   role(where: RoleWhereUniqueInput!): Role
   roles(where: RoleWhereInput! = {}, orderBy: [RoleOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RoleWhereUniqueInput): [Role!]
   rolesCount(where: RoleWhereInput! = {}): Int
-  todo(where: TodoWhereUniqueInput!): Todo
-  todos(where: TodoWhereInput! = {}, orderBy: [TodoOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TodoWhereUniqueInput): [Todo!]
-  todosCount(where: TodoWhereInput! = {}): Int
-  todoImage(where: TodoImageWhereUniqueInput!): TodoImage
-  todoImages(where: TodoImageWhereInput! = {}, orderBy: [TodoImageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TodoImageWhereUniqueInput): [TodoImage!]
-  todoImagesCount(where: TodoImageWhereInput! = {}): Int
+  lead(where: LeadWhereUniqueInput!): Lead
+  leads(where: LeadWhereInput! = {}, orderBy: [LeadOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LeadWhereUniqueInput): [Lead!]
+  leadsCount(where: LeadWhereInput! = {}): Int
+  property(where: PropertyWhereUniqueInput!): Property
+  properties(where: PropertyWhereInput! = {}, orderBy: [PropertyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PropertyWhereUniqueInput): [Property!]
+  propertiesCount(where: PropertyWhereInput! = {}): Int
+  activity(where: ActivityWhereUniqueInput!): Activity
+  activities(where: ActivityWhereInput! = {}, orderBy: [ActivityOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ActivityWhereUniqueInput): [Activity!]
+  activitiesCount(where: ActivityWhereInput! = {}): Int
   keystone: KeystoneMeta!
   authenticatedItem: AuthenticatedItem
   validateUserPasswordResetToken(email: String!, token: String!): ValidateUserPasswordResetTokenResult

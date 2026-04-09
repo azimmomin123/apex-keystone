@@ -77,20 +77,6 @@ export const User = list({
         },
       },
     }),
-    tasks: relationship({
-      ref: 'Todo.assignedTo',
-      many: true,
-      access: {
-        create: permissions.canManageAllTodos,
-        update: ({ session, item }) =>
-          permissions.canManageAllTodos({ session }) || session?.itemId === item.id,
-      },
-      ui: {
-        createView: {
-          fieldMode: args => (permissions.canManageAllTodos(args) ? 'edit' : 'hidden'),
-        },
-        // itemView: { fieldMode: 'read' },
-      },
-    }),
+    phone: text(),
   },
 });

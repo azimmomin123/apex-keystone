@@ -1,13 +1,15 @@
 import { User } from './User';
 import { Role } from './Role';
-import { Todo } from './Todo';
-import { TodoImage } from './TodoImage';
+import { Lead } from './Lead';
+import { Property } from './Property';
+import { Activity } from './Activity';
 
 export const models = {
   User,
   Role,
-  Todo,
-  TodoImage,
+  Lead,
+  Property,
+  Activity,
 };
 
 export default models;

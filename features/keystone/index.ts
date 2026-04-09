@@ -32,8 +32,8 @@ const { withAuth } = createAuth({
       role: {
         create: {
           name: "Admin",
-          canCreateTodos: true,
-          canManageAllTodos: true,
+          canManageLeads: true,
+          canManageAllLeads: true,
           canSeeOtherPeople: true,
           canEditOtherPeople: true,
           canManagePeople: true,
@@ -55,8 +55,8 @@ const { withAuth } = createAuth({
     role {
       id
       name
-      canCreateTodos
-      canManageAllTodos
+      canManageLeads
+      canManageAllLeads
       canSeeOtherPeople
       canEditOtherPeople
       canManagePeople

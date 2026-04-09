@@ -23,8 +23,8 @@ export const Role = list({
   },
   fields: {
     name: text({ validation: { isRequired: true } }),
-    canCreateTodos: checkbox({ defaultValue: false }),
-    canManageAllTodos: checkbox({ defaultValue: false }),
+    canManageLeads: checkbox({ defaultValue: false }),
+    canManageAllLeads: checkbox({ defaultValue: false }),
     canSeeOtherPeople: checkbox({ defaultValue: false }),
     canEditOtherPeople: checkbox({ defaultValue: false }),
     canManagePeople: checkbox({ defaultValue: false }),
