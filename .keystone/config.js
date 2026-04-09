@@ -79,7 +79,7 @@ var User = (0, import_core.list)({
     hideCreate: (args) => !permissions.canManagePeople(args),
     hideDelete: (args) => !permissions.canManagePeople(args),
     listView: {
-      initialColumns: ["name", "email", "role", "tasks"]
+      initialColumns: ["name", "email", "phone", "specialty", "area", "isActive"]
     },
     itemView: {
       defaultFieldMode: ({ session, item }) => {
@@ -122,7 +122,11 @@ var User = (0, import_core.list)({
         }
       }
     }),
-    phone: (0, import_fields.text)()
+    phone: (0, import_fields.text)(),
+    specialty: (0, import_fields.text)(),
+    area: (0, import_fields.text)(),
+    telegramId: (0, import_fields.text)(),
+    isActive: (0, import_fields.checkbox)({ defaultValue: true })
   }
 });
 

@@ -8,6 +8,10 @@ type User {
   password: PasswordState
   role: Role
   phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
   passwordResetToken: PasswordState
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -31,6 +35,10 @@ input UserWhereInput {
   name: StringFilter
   role: RoleWhereInput
   phone: StringFilter
+  specialty: StringFilter
+  area: StringFilter
+  telegramId: StringFilter
+  isActive: BooleanFilter
   passwordResetToken: PasswordFilter
   passwordResetIssuedAt: DateTimeNullableFilter
   passwordResetRedeemedAt: DateTimeNullableFilter
@@ -81,6 +89,11 @@ input NestedStringFilter {
   not: NestedStringFilter
 }
 
+input BooleanFilter {
+  equals: Boolean
+  not: BooleanFilter
+}
+
 input PasswordFilter {
   isSet: Boolean!
 }
@@ -100,6 +113,10 @@ input UserOrderByInput {
   id: OrderDirection
   name: OrderDirection
   phone: OrderDirection
+  specialty: OrderDirection
+  area: OrderDirection
+  telegramId: OrderDirection
+  isActive: OrderDirection
   passwordResetIssuedAt: OrderDirection
   passwordResetRedeemedAt: OrderDirection
 }
@@ -115,6 +132,10 @@ input UserUpdateInput {
   password: String
   role: RoleRelateToOneForUpdateInput
   phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -137,6 +158,10 @@ input UserCreateInput {
   password: String
   role: RoleRelateToOneForCreateInput
   phone: String
+  specialty: String
+  area: String
+  telegramId: String
+  isActive: Boolean
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -179,11 +204,6 @@ input RoleWhereInput {
   canManageRoles: BooleanFilter
   canAccessDashboard: BooleanFilter
   assignedTo: UserManyRelationFilter
-}
-
-input BooleanFilter {
-  equals: Boolean
-  not: BooleanFilter
 }
 
 input UserManyRelationFilter {

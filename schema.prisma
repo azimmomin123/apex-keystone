@@ -19,6 +19,10 @@ model User {
   role                      Role?      @relation("User_role", fields: [roleId], references: [id])
   roleId                    String?    @map("role")
   phone                     String     @default("")
+  specialty                 String     @default("")
+  area                      String     @default("")
+  telegramId                String     @default("")
+  isActive                  Boolean    @default(true)
   passwordResetToken        String?
   passwordResetIssuedAt     DateTime?
   passwordResetRedeemedAt   DateTime?
