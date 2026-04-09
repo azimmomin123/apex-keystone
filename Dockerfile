@@ -13,8 +13,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx keystone build --no-ui
 RUN npx prisma generate
-# Skip type checking during build to avoid DB connection issues
-RUN SKIP_ENV_VALIDATION=1 npx next build --no-lint
+# Build Next.js app
+RUN SKIP_ENV_VALIDATION=1 npx next build
 
 FROM node:22-bookworm-slim AS production
 
