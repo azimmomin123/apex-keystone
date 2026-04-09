@@ -1,6 +1,6 @@
 import { list } from '@keystone-6/core'
 import { allOperations, denyAll } from '@keystone-6/core/access'
-import { checkbox, password, relationship, text } from '@keystone-6/core/fields'
+import { checkbox, password, relationship, select, text } from '@keystone-6/core/fields'
 
 import { isSignedIn, permissions, rules } from '../access'
 import type { Session } from '../access'
@@ -28,7 +28,7 @@ export const User = list({
     hideCreate: args => !permissions.canManagePeople(args),
     hideDelete: args => !permissions.canManagePeople(args),
     listView: {
-      initialColumns: ['name', 'email', 'role', 'tasks'],
+      initialColumns: ['name', 'email', 'phone', 'specialty', 'area', 'isActive'],
     },
     itemView: {
       defaultFieldMode: ({ session, item }) => {
@@ -78,5 +78,9 @@ export const User = list({
       },
     }),
     phone: text(),
+    specialty: text(),
+    area: text(),
+    telegramId: text(),
+    isActive: checkbox({ defaultValue: true }),
   },
 });
