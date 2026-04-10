@@ -12,7 +12,7 @@ export const Lead = list({
   },
   ui: {
     listView: {
-      initialColumns: ['name', 'email', 'phone', 'stage', 'assignedTo', 'source'],
+      initialColumns: ['name', 'email', 'phone', 'stage', 'assignedTo', 'source', 'propertyInterest'],
     },
   },
   fields: {
@@ -62,6 +62,17 @@ export const Lead = list({
 
     budget: text(),
     notes: text({ ui: { displayMode: 'textarea' } }),
+
+    // Gmail lead ingestion fields
+    propertyInterest: text(),
+    message: text({ ui: { displayMode: 'textarea' } }),
+    followUpDate: timestamp(),
+    // NOTE: isIndexed: 'unique' omitted on purpose — Keystone's unique index
+    // would disallow NULLs, but manual leads have no thread ID. The unique
+    // constraint is enforced by a Postgres partial unique index in the
+    // migration (WHERE "emailThreadId" IS NOT NULL). Field is nullable so
+    // multiple manual leads (NULL thread IDs) don't collide.
+    emailThreadId: text({ db: { isNullable: true } }),
 
     assignedTo: relationship({
       ref: 'Agent.leads',

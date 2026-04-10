@@ -14,8 +14,8 @@ export const User = list({
         if (process.env.PUBLIC_SIGNUPS_ALLOWED === 'true') {
           return true;
         }
-        // Otherwise, require canManagePeople permission
-        return permissions.canManagePeople(args);
+        // Otherwise, require admin (app is invite-only; admin creates users from the admin Users page)
+        return permissions.isAdmin(args);
       },
       delete: permissions.canManagePeople,
     },
@@ -82,5 +82,16 @@ export const User = list({
     area: text(),
     telegramId: text(),
     isActive: checkbox({ defaultValue: true }),
+    isAdmin: checkbox({
+      defaultValue: false,
+      access: {
+        // Any signed-in user can read (so the session can include it)
+        read: isSignedIn,
+        // Only admins can grant/revoke admin
+        create: permissions.isAdmin,
+        update: permissions.isAdmin,
+      },
+    }),
+    mustChangePassword: checkbox({ defaultValue: false }),
   },
 });

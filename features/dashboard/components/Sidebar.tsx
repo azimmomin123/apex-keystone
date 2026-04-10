@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AdminMeta } from '../hooks/useAdminMeta'
-import { Home, Database, ChevronRight, Package } from 'lucide-react'
+import { Home, Database, ChevronRight, Package, Users, Inbox } from 'lucide-react'
 import { Logo, LogoIcon } from '@/features/dashboard/components/Logo'
 import { UserProfileClient } from './UserProfileClient'
 
@@ -44,6 +44,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  isAdmin?: boolean;
 }
 
 interface SidebarProps {
@@ -217,6 +218,31 @@ export function Sidebar({ adminMeta, user }: SidebarProps) {
            </SidebarMenu>
           </SidebarGroup>
         ))}
+
+        {/* Admin section — only shown to users with session.data.isAdmin === true */}
+        {user?.isAdmin === true && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isLinkActive('/dashboard/admin/users')}>
+                  <Link href="/dashboard/admin/users" onClick={() => setOpenMobile(false)}>
+                    <Users className="h-4 w-4" />
+                    <span>Users</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isLinkActive('/dashboard/admin/leads')}>
+                  <Link href="/dashboard/admin/leads" onClick={() => setOpenMobile(false)}>
+                    <Inbox className="h-4 w-4" />
+                    <span>Leads</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       
       <SidebarFooter>

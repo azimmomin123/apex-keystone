@@ -296,6 +296,8 @@ export async function getAuthenticatedUser() {
           id
           email
           name
+          isAdmin
+          mustChangePassword
           role {
             canAccessDashboard
           }

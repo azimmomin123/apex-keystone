@@ -42,7 +42,8 @@ var permissions = {
   canManageLeads: ({ session }) => session?.data.role?.canManageLeads ?? false,
   canManageAllLeads: ({ session }) => session?.data.role?.canManageAllLeads ?? false,
   canManagePeople: ({ session }) => session?.data.role?.canManagePeople ?? false,
-  canManageRoles: ({ session }) => session?.data.role?.canManageRoles ?? false
+  canManageRoles: ({ session }) => session?.data.role?.canManageRoles ?? false,
+  isAdmin: ({ session }) => session?.data?.isAdmin === true
 };
 var rules = {
   canReadPeople: ({ session }) => {
@@ -66,7 +67,7 @@ var User = (0, import_core.list)({
         if (process.env.PUBLIC_SIGNUPS_ALLOWED === "true") {
           return true;
         }
-        return permissions.canManagePeople(args);
+        return permissions.isAdmin(args);
       },
       delete: permissions.canManagePeople
     },
@@ -126,7 +127,18 @@ var User = (0, import_core.list)({
     specialty: (0, import_fields.text)(),
     area: (0, import_fields.text)(),
     telegramId: (0, import_fields.text)(),
-    isActive: (0, import_fields.checkbox)({ defaultValue: true })
+    isActive: (0, import_fields.checkbox)({ defaultValue: true }),
+    isAdmin: (0, import_fields.checkbox)({
+      defaultValue: false,
+      access: {
+        // Any signed-in user can read (so the session can include it)
+        read: isSignedIn,
+        // Only admins can grant/revoke admin
+        create: permissions.isAdmin,
+        update: permissions.isAdmin
+      }
+    }),
+    mustChangePassword: (0, import_fields.checkbox)({ defaultValue: false })
   }
 });
 
@@ -216,7 +228,7 @@ var Lead = (0, import_core4.list)({
   },
   ui: {
     listView: {
-      initialColumns: ["name", "email", "phone", "stage", "assignedTo", "source"]
+      initialColumns: ["name", "email", "phone", "stage", "assignedTo", "source", "propertyInterest"]
     }
   },
   fields: {
@@ -262,6 +274,16 @@ var Lead = (0, import_core4.list)({
     }),
     budget: (0, import_fields4.text)(),
     notes: (0, import_fields4.text)({ ui: { displayMode: "textarea" } }),
+    // Gmail lead ingestion fields
+    propertyInterest: (0, import_fields4.text)(),
+    message: (0, import_fields4.text)({ ui: { displayMode: "textarea" } }),
+    followUpDate: (0, import_fields4.timestamp)(),
+    // NOTE: isIndexed: 'unique' omitted on purpose — Keystone's unique index
+    // would disallow NULLs, but manual leads have no thread ID. The unique
+    // constraint is enforced by a Postgres partial unique index in the
+    // migration (WHERE "emailThreadId" IS NOT NULL). Field is nullable so
+    // multiple manual leads (NULL thread IDs) don't collide.
+    emailThreadId: (0, import_fields4.text)({ db: { isNullable: true } }),
     assignedTo: (0, import_fields4.relationship)({
       ref: "Agent.leads",
       many: false
@@ -505,7 +527,16 @@ var databaseURL = process.env.DATABASE_URL || "file:./keystone.db";
 var sessionConfig = {
   maxAge: 60 * 60 * 24 * 360,
   // How long they stay signed in?
-  secret: process.env.SESSION_SECRET || "this secret should only be used in testing"
+  secret: (() => {
+    const s = process.env.SESSION_SECRET;
+    if (!s || s.includes("testing") || s.includes("change-me")) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET must be set to a strong random value in production");
+      }
+      return "dev-only-insecure-session-secret-do-not-use-in-prod";
+    }
+    return s;
+  })()
 };
 var {
   S3_BUCKET_NAME: bucketName = "keystone-test",
@@ -543,6 +574,8 @@ var { withAuth } = (0, import_auth.createAuth)({
   sessionData: `
     name
     email
+    isAdmin
+    mustChangePassword
     role {
       id
       name

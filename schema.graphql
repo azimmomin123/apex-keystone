@@ -12,6 +12,8 @@ type User {
   area: String
   telegramId: String
   isActive: Boolean
+  isAdmin: Boolean
+  mustChangePassword: Boolean
   passwordResetToken: PasswordState
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -39,6 +41,8 @@ input UserWhereInput {
   area: StringFilter
   telegramId: StringFilter
   isActive: BooleanFilter
+  isAdmin: BooleanFilter
+  mustChangePassword: BooleanFilter
   passwordResetToken: PasswordFilter
   passwordResetIssuedAt: DateTimeNullableFilter
   passwordResetRedeemedAt: DateTimeNullableFilter
@@ -117,6 +121,8 @@ input UserOrderByInput {
   area: OrderDirection
   telegramId: OrderDirection
   isActive: OrderDirection
+  isAdmin: OrderDirection
+  mustChangePassword: OrderDirection
   passwordResetIssuedAt: OrderDirection
   passwordResetRedeemedAt: OrderDirection
 }
@@ -136,6 +142,8 @@ input UserUpdateInput {
   area: String
   telegramId: String
   isActive: Boolean
+  isAdmin: Boolean
+  mustChangePassword: Boolean
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -162,6 +170,8 @@ input UserCreateInput {
   area: String
   telegramId: String
   isActive: Boolean
+  isAdmin: Boolean
+  mustChangePassword: Boolean
   passwordResetToken: String
   passwordResetIssuedAt: DateTime
   passwordResetRedeemedAt: DateTime
@@ -379,6 +389,10 @@ type Lead {
   priority: String
   budget: String
   notes: String
+  propertyInterest: String
+  message: String
+  followUpDate: DateTime
+  emailThreadId: String
   assignedTo: Agent
   property: Property
   activities(where: ActivityWhereInput! = {}, orderBy: [ActivityOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ActivityWhereUniqueInput): [Activity!]
@@ -404,6 +418,10 @@ input LeadWhereInput {
   priority: StringNullableFilter
   budget: StringFilter
   notes: StringFilter
+  propertyInterest: StringFilter
+  message: StringFilter
+  followUpDate: DateTimeNullableFilter
+  emailThreadId: StringNullableFilter
   assignedTo: AgentWhereInput
   property: PropertyWhereInput
   activities: ActivityManyRelationFilter
@@ -442,6 +460,10 @@ input LeadOrderByInput {
   priority: OrderDirection
   budget: OrderDirection
   notes: OrderDirection
+  propertyInterest: OrderDirection
+  message: OrderDirection
+  followUpDate: OrderDirection
+  emailThreadId: OrderDirection
   createdAt: OrderDirection
   updatedAt: OrderDirection
 }
@@ -455,6 +477,10 @@ input LeadUpdateInput {
   priority: String
   budget: String
   notes: String
+  propertyInterest: String
+  message: String
+  followUpDate: DateTime
+  emailThreadId: String
   assignedTo: AgentRelateToOneForUpdateInput
   property: PropertyRelateToOneForUpdateInput
   activities: ActivityRelateToManyForUpdateInput
@@ -495,6 +521,10 @@ input LeadCreateInput {
   priority: String
   budget: String
   notes: String
+  propertyInterest: String
+  message: String
+  followUpDate: DateTime
+  emailThreadId: String
   assignedTo: AgentRelateToOneForCreateInput
   property: PropertyRelateToOneForCreateInput
   activities: ActivityRelateToManyForCreateInput

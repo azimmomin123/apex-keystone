@@ -23,6 +23,8 @@ model User {
   area                      String     @default("")
   telegramId                String     @default("")
   isActive                  Boolean    @default(true)
+  isAdmin                   Boolean    @default(false)
+  mustChangePassword        Boolean    @default(false)
   passwordResetToken        String?
   passwordResetIssuedAt     DateTime?
   passwordResetRedeemedAt   DateTime?
@@ -63,22 +65,26 @@ model Agent {
 }
 
 model Lead {
-  id           String     @id @default(cuid())
-  name         String     @default("")
-  email        String     @default("")
-  phone        String     @default("")
-  stage        String?    @default("new")
-  source       String?    @default("manual")
-  priority     String?    @default("medium")
-  budget       String     @default("")
-  notes        String     @default("")
-  assignedTo   Agent?     @relation("Lead_assignedTo", fields: [assignedToId], references: [id])
-  assignedToId String?    @map("assignedTo")
-  property     Property?  @relation("Lead_property", fields: [propertyId], references: [id])
-  propertyId   String?    @map("property")
-  activities   Activity[] @relation("Activity_lead")
-  createdAt    DateTime?  @default(now())
-  updatedAt    DateTime?  @updatedAt
+  id               String     @id @default(cuid())
+  name             String     @default("")
+  email            String     @default("")
+  phone            String     @default("")
+  stage            String?    @default("new")
+  source           String?    @default("manual")
+  priority         String?    @default("medium")
+  budget           String     @default("")
+  notes            String     @default("")
+  propertyInterest String     @default("")
+  message          String     @default("")
+  followUpDate     DateTime?
+  emailThreadId    String?
+  assignedTo       Agent?     @relation("Lead_assignedTo", fields: [assignedToId], references: [id])
+  assignedToId     String?    @map("assignedTo")
+  property         Property?  @relation("Lead_property", fields: [propertyId], references: [id])
+  propertyId       String?    @map("property")
+  activities       Activity[] @relation("Activity_lead")
+  createdAt        DateTime?  @default(now())
+  updatedAt        DateTime?  @updatedAt
 
   @@index([assignedToId])
   @@index([propertyId])

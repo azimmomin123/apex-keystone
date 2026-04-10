@@ -3,6 +3,8 @@ export type Session = {
   listKey: string
   data: {
     name: string
+    isAdmin: boolean
+    mustChangePassword: boolean
     role: {
       id: string
       name: string
@@ -30,6 +32,7 @@ export const permissions = {
   canManageAllLeads: ({ session }: AccessArgs) => session?.data.role?.canManageAllLeads ?? false,
   canManagePeople: ({ session }: AccessArgs) => session?.data.role?.canManagePeople ?? false,
   canManageRoles: ({ session }: AccessArgs) => session?.data.role?.canManageRoles ?? false,
+  isAdmin: ({ session }: AccessArgs) => session?.data?.isAdmin === true,
 }
 
 export const rules = {

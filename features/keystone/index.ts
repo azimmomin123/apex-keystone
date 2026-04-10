@@ -60,6 +60,8 @@ const { withAuth } = createAuth({
   sessionData: `
     name
     email
+    isAdmin
+    mustChangePassword
     role {
       id
       name
