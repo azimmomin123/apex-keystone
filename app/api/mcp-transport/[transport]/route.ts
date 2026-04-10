@@ -1,18 +1,20 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { 
+import {
   Tool,
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { 
-  getIntrospectionQuery, 
-  buildClientSchema, 
+import {
+  getIntrospectionQuery,
+  buildClientSchema,
   GraphQLSchema,
   isNonNullType,
   isListType,
   isInputObjectType,
+  graphql,
 } from 'graphql';
 import { getBaseUrl } from '@/features/dashboard/lib/getBaseUrl';
+import { keystoneContext } from '@/features/keystone/context';
 
 const SAFE_GRAPHQL_PATTERN = /^[a-zA-Z0-9_ {}\n\r,():.!@\[\]]+$/;
 
@@ -34,8 +36,25 @@ function getSimpleTypeName(type: any): string {
   return type.name || type.toString();
 }
 
-// Execute GraphQL query with authentication
-async function executeGraphQL(query: string, graphqlEndpoint: string, cookie: string): Promise<any> {
+// Execute GraphQL query with authentication.
+// When `useSudo` is true, runs against Keystone's internal sudo context
+// (bypasses access control — used for MCP API-key callers).
+// Otherwise forwards to the public GraphQL endpoint with the caller's cookie.
+async function executeGraphQL(
+  query: string,
+  graphqlEndpoint: string,
+  cookie: string,
+  useSudo: boolean,
+): Promise<any> {
+  if (useSudo) {
+    const sudoContext = keystoneContext.sudo();
+    const result = await sudoContext.graphql.raw({ query });
+    if (result.errors) {
+      throw new Error(`GraphQL execution failed: ${JSON.stringify(result.errors)}`);
+    }
+    return result;
+  }
+
   const response = await fetch(graphqlEndpoint, {
     method: 'POST',
     headers: {
@@ -52,78 +71,38 @@ async function executeGraphQL(query: string, graphqlEndpoint: string, cookie: st
   return result;
 }
 
-// Authenticate with Keystone and return a session cookie.
-// Used when the MCP caller provides an API key instead of a browser session.
-let cachedAdminCookie: string | null = null;
-let cachedAdminCookieExpiry = 0;
-
-async function getAdminSessionCookie(graphqlEndpoint: string): Promise<string> {
-  // Reuse cached cookie if still valid (refresh every 30 minutes)
-  if (cachedAdminCookie && Date.now() < cachedAdminCookieExpiry) {
-    return cachedAdminCookie;
-  }
-
-  const email = process.env.SEED_ADMIN_EMAIL || "admin@apexrealtors.com";
-  const password = process.env.SEED_ADMIN_PASSWORD;
-  if (!password) {
-    throw new Error("SEED_ADMIN_PASSWORD env var is required for MCP API key authentication");
-  }
-
-  const mutation = `mutation {
-    authenticateUserWithPassword(email: "${email}", password: "${password}") {
-      ... on UserAuthenticationWithPasswordSuccess {
-        sessionToken
-      }
-      ... on UserAuthenticationWithPasswordFailure {
-        message
-      }
-    }
-  }`;
-
-  const response = await fetch(graphqlEndpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: mutation }),
-  });
-
-  const result = await response.json();
-  const auth = result?.data?.authenticateUserWithPassword;
-  if (!auth?.sessionToken) {
-    const msg = auth?.message || "unknown error";
-    throw new Error(`MCP admin authentication failed: ${msg}`);
-  }
-
-  // Extract session cookie from response or build one from the token
-  const setCookie = response.headers.get("set-cookie") || "";
-  const sessionCookie = setCookie.includes("keystonejs-session=")
-    ? setCookie
-    : `keystonejs-session=${auth.sessionToken}`;
-
-  cachedAdminCookie = sessionCookie;
-  cachedAdminCookieExpiry = Date.now() + 30 * 60 * 1000; // 30 minutes
-  return sessionCookie;
-}
-
 // Get GraphQL schema from introspection
-async function getGraphQLSchema(graphqlEndpoint: string, cookie: string): Promise<GraphQLSchema> {
-  const response = await fetch(graphqlEndpoint, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Cookie': cookie,
-    },
-    body: JSON.stringify({ query: getIntrospectionQuery() }),
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+async function getGraphQLSchema(
+  graphqlEndpoint: string,
+  cookie: string,
+  useSudo: boolean,
+): Promise<GraphQLSchema> {
+  let result: any;
+
+  if (useSudo) {
+    const sudoContext = keystoneContext.sudo();
+    result = await sudoContext.graphql.raw({ query: getIntrospectionQuery() });
+  } else {
+    const response = await fetch(graphqlEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookie,
+      },
+      body: JSON.stringify({ query: getIntrospectionQuery() }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    result = await response.json();
   }
-  
-  const result = await response.json();
+
   if (result.errors) {
     throw new Error(`GraphQL introspection failed: ${JSON.stringify(result.errors)}`);
   }
-  
+
   return buildClientSchema(result.data);
 }
 
@@ -152,16 +131,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     const baseUrl = await getBaseUrl();
     const graphqlEndpoint = `${baseUrl}/api/graphql`;
 
-    // Resolve authentication: use the browser cookie if present,
-    // otherwise create an admin session for API-key callers.
-    const rawCookie = request.headers.get('cookie') || '';
-    const hasKeystoneSession = rawCookie.includes('keystonejs-session=');
-    const cookie = hasKeystoneSession
-      ? rawCookie
-      : await getAdminSessionCookie(graphqlEndpoint);
+    // Resolve authentication mode: if the caller has a browser session,
+    // forward it to GraphQL. Otherwise (API-key auth) use Keystone's
+    // internal sudo context which bypasses access control.
+    const cookie = request.headers.get('cookie') || '';
+    const useSudo = !cookie.includes('keystonejs-session=');
 
     // Get the GraphQL schema
-    const schema = await getGraphQLSchema(graphqlEndpoint, cookie);
+    const schema = await getGraphQLSchema(graphqlEndpoint, cookie, useSudo);
     
     // Parse the JSON-RPC request
     const body = await request.json();
@@ -445,7 +422,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           `.trim();
           
           // Execute the query
-          const result = await executeGraphQL(queryString, graphqlEndpoint, cookie || '');
+          const result = await executeGraphQL(queryString, graphqlEndpoint, cookie || '', useSudo);
           
           return new Response(JSON.stringify({
             jsonrpc: '2.0',
@@ -700,7 +677,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           `.trim();
           
           // Execute the mutation
-          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '');
+          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '', useSudo);
           
           // Mark that data has changed
           dataHasChanged = true;
@@ -741,7 +718,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           `.trim();
           
           // Execute the mutation
-          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '');
+          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '', useSudo);
           
           // Mark that data has changed
           dataHasChanged = true;
@@ -781,7 +758,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           `.trim();
           
           // Execute the mutation
-          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '');
+          const result = await executeGraphQL(mutationString, graphqlEndpoint, cookie || '', useSudo);
           
           // Mark that data has changed
           dataHasChanged = true;
@@ -937,7 +914,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           `.trim();
           
           // Execute the search query
-          const result = await executeGraphQL(queryString, graphqlEndpoint, cookie || '');
+          const result = await executeGraphQL(queryString, graphqlEndpoint, cookie || '', useSudo);
           
           return new Response(JSON.stringify({
             jsonrpc: '2.0',
