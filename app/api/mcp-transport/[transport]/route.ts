@@ -52,6 +52,58 @@ async function executeGraphQL(query: string, graphqlEndpoint: string, cookie: st
   return result;
 }
 
+// Authenticate with Keystone and return a session cookie.
+// Used when the MCP caller provides an API key instead of a browser session.
+let cachedAdminCookie: string | null = null;
+let cachedAdminCookieExpiry = 0;
+
+async function getAdminSessionCookie(graphqlEndpoint: string): Promise<string> {
+  // Reuse cached cookie if still valid (refresh every 30 minutes)
+  if (cachedAdminCookie && Date.now() < cachedAdminCookieExpiry) {
+    return cachedAdminCookie;
+  }
+
+  const email = process.env.SEED_ADMIN_EMAIL || "admin@apexrealtors.com";
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error("SEED_ADMIN_PASSWORD env var is required for MCP API key authentication");
+  }
+
+  const mutation = `mutation {
+    authenticateUserWithPassword(email: "${email}", password: "${password}") {
+      ... on UserAuthenticationWithPasswordSuccess {
+        sessionToken
+      }
+      ... on UserAuthenticationWithPasswordFailure {
+        message
+      }
+    }
+  }`;
+
+  const response = await fetch(graphqlEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: mutation }),
+  });
+
+  const result = await response.json();
+  const auth = result?.data?.authenticateUserWithPassword;
+  if (!auth?.sessionToken) {
+    const msg = auth?.message || "unknown error";
+    throw new Error(`MCP admin authentication failed: ${msg}`);
+  }
+
+  // Extract session cookie from response or build one from the token
+  const setCookie = response.headers.get("set-cookie") || "";
+  const sessionCookie = setCookie.includes("keystonejs-session=")
+    ? setCookie
+    : `keystonejs-session=${auth.sessionToken}`;
+
+  cachedAdminCookie = sessionCookie;
+  cachedAdminCookieExpiry = Date.now() + 30 * 60 * 1000; // 30 minutes
+  return sessionCookie;
+}
+
 // Get GraphQL schema from introspection
 async function getGraphQLSchema(graphqlEndpoint: string, cookie: string): Promise<GraphQLSchema> {
   const response = await fetch(graphqlEndpoint, {
@@ -99,10 +151,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     // Construct GraphQL endpoint
     const baseUrl = await getBaseUrl();
     const graphqlEndpoint = `${baseUrl}/api/graphql`;
-    
-    // Extract cookie from request
-    const cookie = request.headers.get('cookie') || ''
-  
+
+    // Resolve authentication: use the browser cookie if present,
+    // otherwise create an admin session for API-key callers.
+    const rawCookie = request.headers.get('cookie') || '';
+    const hasKeystoneSession = rawCookie.includes('keystonejs-session=');
+    const cookie = hasKeystoneSession
+      ? rawCookie
+      : await getAdminSessionCookie(graphqlEndpoint);
+
     // Get the GraphQL schema
     const schema = await getGraphQLSchema(graphqlEndpoint, cookie);
     
