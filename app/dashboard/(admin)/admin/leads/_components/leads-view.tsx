@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RefreshCw, LayoutGrid, Rows3 } from 'lucide-react';
+import { RefreshCw, LayoutGrid, Rows3, Plus } from 'lucide-react';
 import type { AdminLead, AdminAgentOption } from '../page';
 import { LeadsKanban } from './leads-kanban';
 import { LeadsTable } from './leads-table';
 import { LeadDrawer } from './lead-drawer';
+import { CreateLeadDialog } from './create-lead-dialog';
 import { triggerGmailSync } from '../actions';
 
 interface Props {
@@ -41,6 +42,7 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
   const [sourceFilter, setSourceFilter] = useState('all');
   const [agentFilter, setAgentFilter] = useState('all');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [isSyncing, startSync] = useTransition();
 
   const filtered = useMemo(() => {
@@ -113,6 +115,10 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
           </SelectContent>
         </Select>
         <div className="flex-1" />
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          New lead
+        </Button>
         <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
           <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
           {isSyncing ? 'Syncing…' : 'Sync Gmail now'}
@@ -141,6 +147,12 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
         agents={agents}
         open={!!selectedLead}
         onClose={() => setSelectedLeadId(null)}
+      />
+
+      <CreateLeadDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        agents={agents}
       />
     </>
   );

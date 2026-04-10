@@ -32,6 +32,7 @@ export async function signIn(prevState: { message: string | null, formData: { em
             id
             name
             email
+            mustChangePassword
           }
         }
         ... on UserAuthenticationWithPasswordFailure {
@@ -76,7 +77,19 @@ export async function signIn(prevState: { message: string | null, formData: { em
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
+
+    // If the user was provisioned with a temp password (invited or admin-reset),
+    // force them through the password-change gate before landing on their
+    // intended destination.
+    if (response.data.authenticate.item?.mustChangePassword === true) {
+      redirect(`/dashboard/force-reset?from=${encodeURIComponent(from)}`);
+    }
   } catch (error) {
+    // next/navigation's redirect() throws a NEXT_REDIRECT error — we must
+    // rethrow it so the framework can handle it.
+    if (error && typeof error === 'object' && 'digest' in error && typeof (error as any).digest === 'string' && (error as any).digest.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
     return {
       message: error instanceof Error ? error.message : 'Failed to authenticate',
       formData: { email, password }
@@ -318,4 +331,52 @@ export async function getAuthHeaders() {
   return keystoneCookie ? {
     Cookie: `keystonejs-session=${keystoneCookie}`
   } : {};
+}
+
+/**
+ * Change the currently authenticated user's password and clear the
+ * mustChangePassword flag. Used by the forced-reset gate at /dashboard/force-reset.
+ * Relies on Keystone's built-in self-update access rules (a user can update
+ * their own password and fields on their own User record).
+ */
+export async function changeOwnPassword(
+  newPassword: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (!newPassword || newPassword.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters.' };
+  }
+
+  const whoAmI = await keystoneClient(`
+    query WhoAmI {
+      authenticatedItem {
+        ... on User {
+          id
+        }
+      }
+    }
+  `);
+  if (!whoAmI.success) {
+    return { success: false, error: whoAmI.error };
+  }
+  const id = (whoAmI.data as any)?.authenticatedItem?.id;
+  if (!id) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const mutation = `
+    mutation ChangeOwnPassword($id: ID!, $data: UserUpdateInput!) {
+      updateUser(where: { id: $id }, data: $data) {
+        id
+        mustChangePassword
+      }
+    }
+  `;
+  const response = await keystoneClient(mutation, {
+    id,
+    data: { password: newPassword, mustChangePassword: false },
+  });
+  if (!response.success) {
+    return { success: false, error: response.error };
+  }
+  return { success: true };
 }

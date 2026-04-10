@@ -26,6 +26,63 @@ async function requireAdmin(): Promise<{ id: string } | { error: string }> {
   return { id: item.id };
 }
 
+export interface CreateLeadInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  source?: string;
+  stage?: string;
+  priority?: string;
+  propertyInterest?: string;
+  message?: string;
+  notes?: string;
+  followUpDate?: string | null;
+  assignedToId?: string | null;
+}
+
+export async function createLead(
+  input: CreateLeadInput,
+): Promise<ActionResult<{ id: string }>> {
+  const me = await requireAdmin();
+  if ('error' in me) return { success: false, error: me.error };
+
+  const name = input.name?.trim();
+  if (!name) return { success: false, error: 'Lead name is required' };
+
+  const data: Record<string, unknown> = {
+    name,
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+    source: input.source || 'manual',
+    stage: input.stage || 'new',
+    priority: input.priority || 'medium',
+    propertyInterest: input.propertyInterest?.trim() || null,
+    message: input.message?.trim() || null,
+    notes: input.notes?.trim() || null,
+    followUpDate: input.followUpDate || null,
+  };
+
+  if (input.assignedToId) {
+    data.assignedTo = { connect: { id: input.assignedToId } };
+  }
+
+  const mutation = `
+    mutation CreateLead($data: LeadCreateInput!) {
+      createLead(data: $data) {
+        id
+      }
+    }
+  `;
+  const response = await keystoneClient(mutation, { data });
+  if (!response.success) return { success: false, error: response.error };
+
+  const created = (response.data as any)?.createLead;
+  if (!created?.id) return { success: false, error: 'Lead creation returned no id' };
+
+  revalidatePath('/dashboard/admin/leads');
+  return { success: true, data: { id: created.id } };
+}
+
 export async function updateLeadStage(leadId: string, stage: string): Promise<ActionResult> {
   const me = await requireAdmin();
   if ('error' in me) return { success: false, error: me.error };
