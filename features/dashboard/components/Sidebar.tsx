@@ -125,6 +125,20 @@ export function Sidebar({ adminMeta, user }: SidebarProps) {
           </SidebarMenu>
         </SidebarGroup>
 
+        {/* Leads — visible to every signed-in user; scoped per-user by Keystone access filter */}
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isLinkActive('/dashboard/leads')}>
+                <Link href="/dashboard/leads" onClick={() => setOpenMobile(false)}>
+                  <Inbox className="h-4 w-4" />
+                  <span>Leads</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+
         {/* Models Dropdown - Collapsible */}
         {dashboardItems.map((dashboardItem) => (
         <SidebarGroup key={dashboardItem.title}>
@@ -229,14 +243,6 @@ export function Sidebar({ adminMeta, user }: SidebarProps) {
                   <Link href="/dashboard/admin/users" onClick={() => setOpenMobile(false)}>
                     <Users className="h-4 w-4" />
                     <span>Users</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isLinkActive('/dashboard/admin/leads')}>
-                  <Link href="/dashboard/admin/leads" onClick={() => setOpenMobile(false)}>
-                    <Inbox className="h-4 w-4" />
-                    <span>Leads</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
