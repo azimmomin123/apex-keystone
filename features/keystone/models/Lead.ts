@@ -9,6 +9,14 @@ export const Lead = list({
     operation: {
       ...allOperations(isSignedIn),
     },
+    // NOTE: this filter intentionally branches on session.data.isAdmin only.
+    // The Role model exposes canManageAllLeads / canManageLeads flags (see
+    // features/keystone/access.ts and features/keystone/models/Role.ts), but
+    // role-flag-based gating is deferred to a follow-up task — see the
+    // "Out of scope" section of
+    // docs/superpowers/specs/2026-04-10-leads-page-user-scoping-design.md.
+    // If you add a new admin-like permission, update this comment *and* the
+    // filter callbacks below, not just the Role schema.
     filter: {
       query: ({ session }) => {
         if (!session) return false
@@ -41,7 +49,9 @@ export const Lead = list({
 
       // Non-admin create: force assignedTo to the caller's own Agent.
       // findMany + take: 1 is used because Agent.user is a relation, and
-      // findOne's where-input only accepts unique scalars.
+      // findOne's where-input only accepts unique scalars. If a user is
+      // somehow linked to multiple Agent rows (an admin data-entry mistake,
+      // not a legitimate state), the first match is used silently.
       const agents = await context.sudo().query.Agent.findMany({
         where: { user: { id: { equals: session.itemId } } },
         take: 1,
