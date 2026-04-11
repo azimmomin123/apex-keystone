@@ -17,6 +17,7 @@ export interface AdminLead {
   followUpDate: string | null;
   emailThreadId: string | null;
   notes: string | null;
+  type: 'apex' | 'personal';
   createdAt: string | null;
   updatedAt: string | null;
   assignedTo: { id: string; name: string } | null;
@@ -35,13 +36,20 @@ export interface AdminAgentOption {
   name: string;
 }
 
-async function fetchLeadsAndAgents(): Promise<{
+async function fetchLeadsPageData(): Promise<{
   leads: AdminLead[];
   agents: AdminAgentOption[];
+  isAdmin: boolean;
   error: string | null;
 }> {
   const query = `
-    query AdminLeadsAndAgents {
+    query LeadsPageData {
+      authenticatedItem {
+        ... on User {
+          id
+          isAdmin
+        }
+      }
       leads(orderBy: [{ createdAt: desc }]) {
         id
         name
@@ -55,6 +63,7 @@ async function fetchLeadsAndAgents(): Promise<{
         followUpDate
         emailThreadId
         notes
+        type
         createdAt
         updatedAt
         assignedTo {
@@ -82,12 +91,14 @@ async function fetchLeadsAndAgents(): Promise<{
 
   const response = await keystoneClient(query);
   if (!response.success) {
-    return { leads: [], agents: [], error: response.error };
+    return { leads: [], agents: [], isAdmin: false, error: response.error };
   }
   const data = response.data as any;
+  const isAdmin = data?.authenticatedItem?.isAdmin === true;
   return {
     leads: (data?.leads as AdminLead[]) || [],
     agents: (data?.agents as AdminAgentOption[]) || [],
+    isAdmin,
     error: null,
   };
 }
@@ -96,25 +107,26 @@ interface PageProps {
   searchParams: Promise<{ view?: string }>;
 }
 
-export default async function AdminLeadsPage({ searchParams }: PageProps) {
+export default async function LeadsPage({ searchParams }: PageProps) {
   const resolved = await searchParams;
   const initialView: 'kanban' | 'table' = resolved.view === 'table' ? 'table' : 'kanban';
 
-  const { leads, agents, error } = await fetchLeadsAndAgents();
+  const { leads, agents, isAdmin, error } = await fetchLeadsPageData();
+
+  const subtitle = isAdmin
+    ? 'Kanban and table views of all inbound leads. Drag cards between columns to change stage.'
+    : 'Kanban and table views of leads assigned to you. Drag cards between columns to change stage.';
 
   return (
     <PageContainer
       breadcrumbs={[
         { type: 'link', label: 'Dashboard', href: '/dashboard' },
-        { type: 'link', label: 'Admin', href: '/dashboard/admin' },
         { type: 'page', label: 'Leads' },
       ]}
       header={
         <div>
           <h1 className="text-2xl font-semibold">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            Kanban and table views of all inbound leads. Drag cards between columns to change stage.
-          </p>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
       }
     >
@@ -124,7 +136,12 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
             Failed to load leads: {error}
           </div>
         ) : (
-          <LeadsView initialLeads={leads} agents={agents} initialView={initialView} />
+          <LeadsView
+            initialLeads={leads}
+            agents={agents}
+            initialView={initialView}
+            isAdmin={isAdmin}
+          />
         )}
       </div>
     </PageContainer>
