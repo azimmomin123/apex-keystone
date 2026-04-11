@@ -99,6 +99,13 @@ export function Fields({ fields, value, onChange, forceValidation, invalidFields
         value={fieldValue}
         forceValidation={forceValidation && invalidFields?.has(fieldPath)}
         isRequired={testFilter(isRequireds?.[fieldPath] ?? false, serialized)}
+        // isDisabled is a belt-and-suspenders flag alongside the undefined
+        // onChange below. Some field views (e.g. the relationship view's
+        // RelationshipSelect) only disable their interactive inner controls
+        // when isDisabled is true, and would otherwise ignore the missing
+        // onChange — which let non-admins open the combobox even when the
+        // Keystone itemView.fieldMode resolved to 'read' at the server.
+        isDisabled={isReadOnly}
         onChange={
           isReadOnly || !onChange
             ? undefined
