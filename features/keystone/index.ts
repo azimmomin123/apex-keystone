@@ -13,7 +13,16 @@ const sessionConfig = {
   secret: (() => {
     const s = process.env.SESSION_SECRET;
     if (!s || s.includes("testing") || s.includes("change-me")) {
-      if (process.env.NODE_ENV === "production") {
+      // Next 16 + Turbopack evaluates API route modules during the
+      // "Collect page data" phase of `next build`. In the Docker build
+      // stage, NODE_ENV is "production" but runtime env vars (including
+      // SESSION_SECRET) are NOT yet injected. Throwing here would fail
+      // the build even though the secret is present at runtime.
+      // Skip the enforcement during build; the runtime Node process in
+      // the container will re-evaluate this IIFE with the real env and
+      // throw then if the secret is genuinely missing.
+      const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+      if (process.env.NODE_ENV === "production" && !isBuildPhase) {
         throw new Error("SESSION_SECRET must be set to a strong random value in production");
       }
       return "dev-only-insecure-session-secret-do-not-use-in-prod";
