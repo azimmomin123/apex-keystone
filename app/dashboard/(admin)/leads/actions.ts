@@ -68,16 +68,20 @@ export async function createLead(
   const name = input.name?.trim();
   if (!name) return { success: false, error: 'Lead name is required' };
 
+  // Note: email/phone/notes/propertyInterest/message are mapped in Postgres as
+  // `String NOT NULL DEFAULT ''`, so Keystone rejects an explicit `null` even
+  // though the GraphQL field is nominally optional. Fall back to empty string
+  // (not null) for these. followUpDate IS nullable, so null is fine there.
   const data: Record<string, unknown> = {
     name,
-    email: input.email?.trim() || null,
-    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || '',
+    phone: input.phone?.trim() || '',
     source: input.source || 'manual',
     stage: input.stage || 'new',
     priority: input.priority || 'medium',
-    propertyInterest: input.propertyInterest?.trim() || null,
-    message: input.message?.trim() || null,
-    notes: input.notes?.trim() || null,
+    propertyInterest: input.propertyInterest?.trim() || '',
+    message: input.message?.trim() || '',
+    notes: input.notes?.trim() || '',
     followUpDate: input.followUpDate || null,
   };
 

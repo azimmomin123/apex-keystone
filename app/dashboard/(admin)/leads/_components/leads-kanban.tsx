@@ -138,6 +138,14 @@ export function LeadsKanban({ leads, onOpenLead }: Props) {
                     )}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1">
+                    {lead.type === 'personal' && (
+                      <Badge
+                        variant="outline"
+                        className="border-purple-300 bg-purple-50 text-[10px] text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                      >
+                        Personal
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-[10px] capitalize">
                       {lead.source.replace('_', ' ')}
                     </Badge>

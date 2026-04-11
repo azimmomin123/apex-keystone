@@ -247,7 +247,19 @@ export function LeadsTable({ leads, onOpenLead }: Props) {
                       {lead.source.replace('_', ' ')}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{lead.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <span>{lead.name}</span>
+                      {lead.type === 'personal' && (
+                        <Badge
+                          variant="outline"
+                          className="border-purple-300 bg-purple-50 text-[10px] text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                        >
+                          Personal
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-xs">{lead.email ?? ''}</TableCell>
                   <TableCell className="text-xs">{lead.phone ?? ''}</TableCell>
                   <TableCell className="text-xs">{truncate(lead.propertyInterest, 40)}</TableCell>
