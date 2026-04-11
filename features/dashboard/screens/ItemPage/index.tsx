@@ -57,19 +57,35 @@ export async function ItemPage({ params }: ItemPageParams) {
   const adminMetaList = adminMetaResponse.success ? adminMetaResponse.data.list : null
   
   // Create enhanced list with validation data
-  const enhancedList = adminMetaList || list
+  let enhancedList = adminMetaList || list
   
-  // Add validation data to the enhanced list
+  // Add validation data to the enhanced list.
+  // Rebuild the fields record immutably so that the merged itemView (which
+  // carries the per-item fieldMode computed with the caller's session) is
+  // actually the identity visible to the client component. The previous
+  // shape mutated `enhancedList.fields[fieldPath].itemView` in place; that
+  // worked when the field objects were local but broke once
+  // getAdminMetaAction started memoizing its response via React's cache() —
+  // Next ended up serializing the pre-mutation references to the client,
+  // so the role field always hydrated with fieldMode: null and the
+  // relationship combobox rendered as editable for non-admins.
   if (validationResponse.success && enhancedList.fields) {
-    Object.keys(enhancedList.fields).forEach(fieldPath => {
+    const mergedFields: Record<string, any> = {}
+    for (const [fieldPath, field] of Object.entries(enhancedList.fields as Record<string, any>)) {
       const validation = validationResponse.data?.[fieldPath]
-      if (validation && enhancedList.fields[fieldPath]) {
-        enhancedList.fields[fieldPath].itemView = {
-          ...enhancedList.fields[fieldPath].itemView,
-          ...validation
+      if (validation) {
+        mergedFields[fieldPath] = {
+          ...field,
+          itemView: {
+            ...field.itemView,
+            ...validation,
+          },
         }
+      } else {
+        mergedFields[fieldPath] = field
       }
-    })
+    }
+    enhancedList = { ...enhancedList, fields: mergedFields }
   }
 
   return (
