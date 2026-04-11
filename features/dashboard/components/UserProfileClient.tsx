@@ -36,6 +36,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  isAdmin?: boolean;
 }
 
 interface UserProfileClientProps {
@@ -106,16 +107,20 @@ export function UserProfileClient({ user }: UserProfileClientProps) {
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem 
-                className="gap-3"
-                onClick={() => window.open('/api/graphql', '_blank')}
-              >
-                <Database className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">GraphQL API</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            {user.isAdmin === true && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    className="gap-3"
+                    onClick={() => window.open('/api/graphql', '_blank')}
+                  >
+                    <Database className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">GraphQL API</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem

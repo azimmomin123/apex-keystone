@@ -139,8 +139,8 @@ export function Sidebar({ adminMeta, user }: SidebarProps) {
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Models Dropdown - Collapsible */}
-        {dashboardItems.map((dashboardItem) => (
+        {/* Models Dropdown - Collapsible (admin only) */}
+        {user?.isAdmin === true && dashboardItems.map((dashboardItem) => (
         <SidebarGroup key={dashboardItem.title}>
           <SidebarMenu>
             <SidebarGroupLabel>{dashboardItem.title}</SidebarGroupLabel>
