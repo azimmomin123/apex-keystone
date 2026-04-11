@@ -22,6 +22,7 @@ export const Field = ({
   value,
   onChange,
   forceValidation,
+  isDisabled,
   authenticatedItem,
   foreignList,
   localList,
@@ -31,6 +32,7 @@ export const Field = ({
   value: any;
   onChange: (value: any) => void;
   forceValidation?: boolean;
+  isDisabled?: boolean;
   authenticatedItem: any;
   foreignList: any;
   localList: any;
@@ -46,6 +48,7 @@ export const Field = ({
         value={value}
         onChange={onChange}
         forceValidation={forceValidation}
+        isDisabled={isDisabled}
       />
     </FieldContainer>
   );
