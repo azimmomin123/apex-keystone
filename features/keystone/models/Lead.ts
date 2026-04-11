@@ -9,16 +9,83 @@ export const Lead = list({
     operation: {
       ...allOperations(isSignedIn),
     },
+    filter: {
+      query: ({ session }) => {
+        if (!session) return false
+        if (session.data?.isAdmin === true) {
+          return { type: { equals: 'apex' } }
+        }
+        return { assignedTo: { user: { id: { equals: session.itemId } } } }
+      },
+      update: ({ session }) => {
+        if (!session) return false
+        if (session.data?.isAdmin === true) {
+          return { type: { equals: 'apex' } }
+        }
+        return { assignedTo: { user: { id: { equals: session.itemId } } } }
+      },
+      delete: ({ session }) => {
+        if (!session) return false
+        if (session.data?.isAdmin === true) {
+          return { type: { equals: 'apex' } }
+        }
+        return { assignedTo: { user: { id: { equals: session.itemId } } } }
+      },
+    },
+  },
+  hooks: {
+    resolveInput: async ({ operation, resolvedData, inputData, context }) => {
+      if (operation !== 'create') return resolvedData
+      const session = context.session
+      if (!session || session.data?.isAdmin === true) return resolvedData
+
+      // Non-admin create: force assignedTo to the caller's own Agent.
+      // findMany + take: 1 is used because Agent.user is a relation, and
+      // findOne's where-input only accepts unique scalars.
+      const agents = await context.sudo().query.Agent.findMany({
+        where: { user: { id: { equals: session.itemId } } },
+        take: 1,
+        query: 'id',
+      })
+      const agent = agents[0]
+      if (!agent) {
+        throw new Error('You must be linked to an Agent profile to create a lead.')
+      }
+
+      // Read the raw client input (not resolvedData) so we can distinguish
+      // "client explicitly sent type=apex" from "client omitted type and
+      // the field default applied". For non-admins, the safer default is
+      // 'personal' — only honor 'apex' if the client asked for it.
+      const clientType = (inputData as { type?: string } | undefined)?.type
+      const type = clientType === 'apex' ? 'apex' : 'personal'
+
+      return {
+        ...resolvedData,
+        type,
+        assignedTo: { connect: { id: agent.id } },
+      }
+    },
   },
   ui: {
     listView: {
-      initialColumns: ['name', 'email', 'phone', 'stage', 'assignedTo', 'source', 'propertyInterest'],
+      initialColumns: ['name', 'email', 'phone', 'stage', 'type', 'assignedTo', 'source'],
     },
   },
   fields: {
     name: text({ validation: { isRequired: true } }),
     email: text(),
     phone: text(),
+
+    type: select({
+      type: 'string',
+      defaultValue: 'apex',
+      options: [
+        { label: 'Apex', value: 'apex' },
+        { label: 'Personal', value: 'personal' },
+      ],
+      validation: { isRequired: true },
+      ui: { displayMode: 'segmented-control' },
+    }),
 
     stage: select({
       type: 'string',

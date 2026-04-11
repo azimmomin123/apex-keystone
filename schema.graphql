@@ -384,6 +384,7 @@ type Lead {
   name: String
   email: String
   phone: String
+  type: String
   stage: String
   source: String
   priority: String
@@ -413,6 +414,7 @@ input LeadWhereInput {
   name: StringFilter
   email: StringFilter
   phone: StringFilter
+  type: StringFilter
   stage: StringNullableFilter
   source: StringNullableFilter
   priority: StringNullableFilter
@@ -455,6 +457,7 @@ input LeadOrderByInput {
   name: OrderDirection
   email: OrderDirection
   phone: OrderDirection
+  type: OrderDirection
   stage: OrderDirection
   source: OrderDirection
   priority: OrderDirection
@@ -472,6 +475,7 @@ input LeadUpdateInput {
   name: String
   email: String
   phone: String
+  type: String
   stage: String
   source: String
   priority: String
@@ -516,6 +520,7 @@ input LeadCreateInput {
   name: String
   email: String
   phone: String
+  type: String
   stage: String
   source: String
   priority: String

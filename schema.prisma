@@ -69,6 +69,7 @@ model Lead {
   name             String     @default("")
   email            String     @default("")
   phone            String     @default("")
+  type             String     @default("apex")
   stage            String?    @default("new")
   source           String?    @default("manual")
   priority         String?    @default("medium")
