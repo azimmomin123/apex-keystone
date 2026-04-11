@@ -10,7 +10,6 @@ type User {
   phone: String
   specialty: String
   area: String
-  telegramId: String
   isActive: Boolean
   isAdmin: Boolean
   mustChangePassword: Boolean
@@ -39,7 +38,6 @@ input UserWhereInput {
   phone: StringFilter
   specialty: StringFilter
   area: StringFilter
-  telegramId: StringFilter
   isActive: BooleanFilter
   isAdmin: BooleanFilter
   mustChangePassword: BooleanFilter
@@ -119,7 +117,6 @@ input UserOrderByInput {
   phone: OrderDirection
   specialty: OrderDirection
   area: OrderDirection
-  telegramId: OrderDirection
   isActive: OrderDirection
   isAdmin: OrderDirection
   mustChangePassword: OrderDirection
@@ -140,7 +137,6 @@ input UserUpdateInput {
   phone: String
   specialty: String
   area: String
-  telegramId: String
   isActive: Boolean
   isAdmin: Boolean
   mustChangePassword: Boolean
@@ -168,7 +164,6 @@ input UserCreateInput {
   phone: String
   specialty: String
   area: String
-  telegramId: String
   isActive: Boolean
   isAdmin: Boolean
   mustChangePassword: Boolean

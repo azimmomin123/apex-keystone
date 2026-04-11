@@ -68,19 +68,22 @@ export const User = list({
     role: relationship({
       ref: 'Role.assignedTo',
       access: {
-        create: permissions.canManagePeople,
-        update: permissions.canManagePeople,
+        // Only actual admins can assign or change a user's role — including
+        // their own. A user with role.canManagePeople=true but isAdmin=false
+        // was previously able to change roles (including their own) which
+        // is a privilege-escalation hole.
+        create: permissions.isAdmin,
+        update: permissions.isAdmin,
       },
       ui: {
         itemView: {
-          fieldMode: args => (permissions.canManagePeople(args) ? 'edit' : 'read'),
+          fieldMode: args => (permissions.isAdmin(args) ? 'edit' : 'read'),
         },
       },
     }),
     phone: text(),
     specialty: text(),
     area: text(),
-    telegramId: text(),
     isActive: checkbox({ defaultValue: true }),
     isAdmin: checkbox({
       defaultValue: false,

@@ -21,7 +21,6 @@ model User {
   phone                     String     @default("")
   specialty                 String     @default("")
   area                      String     @default("")
-  telegramId                String     @default("")
   isActive                  Boolean    @default(true)
   isAdmin                   Boolean    @default(false)
   mustChangePassword        Boolean    @default(false)
