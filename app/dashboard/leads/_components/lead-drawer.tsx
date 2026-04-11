@@ -32,6 +32,7 @@ import {
 interface Props {
   lead: AdminLead | null;
   agents: AdminAgentOption[];
+  isAdmin: boolean;
   open: boolean;
   onClose: () => void;
 }
@@ -60,7 +61,7 @@ function toDateInput(iso: string | null): string {
   }
 }
 
-export function LeadDrawer({ lead, agents, open, onClose }: Props) {
+export function LeadDrawer({ lead, agents, isAdmin, open, onClose }: Props) {
   const [stage, setStage] = useState<string>('new');
   const [assignedTo, setAssignedTo] = useState<string>('unassigned');
   const [followUp, setFollowUp] = useState<string>('');
@@ -85,10 +86,12 @@ export function LeadDrawer({ lead, agents, open, onClose }: Props) {
       if (stage !== lead.stage) {
         ops.push(updateLeadStage(lead.id, stage));
       }
-      const desiredAgent = assignedTo === 'unassigned' ? null : assignedTo;
-      const currentAgent = lead.assignedTo?.id ?? null;
-      if (desiredAgent !== currentAgent) {
-        ops.push(assignLead(lead.id, desiredAgent));
+      if (isAdmin) {
+        const desiredAgent = assignedTo === 'unassigned' ? null : assignedTo;
+        const currentAgent = lead.assignedTo?.id ?? null;
+        if (desiredAgent !== currentAgent) {
+          ops.push(assignLead(lead.id, desiredAgent));
+        }
       }
       const desiredFollowUp = followUp ? new Date(followUp).toISOString() : null;
       const currentFollowUp = lead.followUpDate ?? null;
@@ -174,22 +177,24 @@ export function LeadDrawer({ lead, agents, open, onClose }: Props) {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="lead-agent">Assigned agent</Label>
-            <Select value={assignedTo} onValueChange={setAssignedTo}>
-              <SelectTrigger id="lead-agent">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {agents.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isAdmin && (
+            <div>
+              <Label htmlFor="lead-agent">Assigned agent</Label>
+              <Select value={assignedTo} onValueChange={setAssignedTo}>
+                <SelectTrigger id="lead-agent">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {agents.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="lead-follow-up">Follow-up date</Label>

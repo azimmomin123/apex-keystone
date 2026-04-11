@@ -24,6 +24,7 @@ interface Props {
   initialLeads: AdminLead[];
   agents: AdminAgentOption[];
   initialView: 'kanban' | 'table';
+  isAdmin: boolean;
 }
 
 const SOURCE_OPTIONS = [
@@ -36,7 +37,7 @@ const SOURCE_OPTIONS = [
   { label: 'Cold Call', value: 'cold_call' },
 ];
 
-export function LeadsView({ initialLeads, agents, initialView }: Props) {
+export function LeadsView({ initialLeads, agents, initialView, isAdmin }: Props) {
   const [view, setView] = useState<'kanban' | 'table'>(initialView);
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -100,29 +101,33 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={agentFilter} onValueChange={setAgentFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Agent" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All agents</SelectItem>
-            <SelectItem value="unassigned">Unassigned</SelectItem>
-            {agents.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {a.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isAdmin && (
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Agent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All agents</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <div className="flex-1" />
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New lead
         </Button>
-        <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing…' : 'Sync Gmail now'}
-        </Button>
+        {isAdmin && (
+          <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing…' : 'Sync Gmail now'}
+          </Button>
+        )}
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as 'kanban' | 'table')}>
@@ -145,6 +150,7 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
       <LeadDrawer
         lead={selectedLead}
         agents={agents}
+        isAdmin={isAdmin}
         open={!!selectedLead}
         onClose={() => setSelectedLeadId(null)}
       />
@@ -153,6 +159,7 @@ export function LeadsView({ initialLeads, agents, initialView }: Props) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         agents={agents}
+        isAdmin={isAdmin}
       />
     </>
   );

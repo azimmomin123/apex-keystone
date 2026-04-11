@@ -29,6 +29,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agents: AdminAgentOption[];
+  isAdmin: boolean;
 }
 
 const SOURCES = [
@@ -56,7 +57,7 @@ const PRIORITIES = [
   { label: 'Cold', value: 'cold' },
 ];
 
-export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
+export function CreateLeadDialog({ open, onOpenChange, agents, isAdmin }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -70,6 +71,7 @@ export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
   const [notes, setNotes] = useState('');
   const [message, setMessage] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
+  const [leadType, setLeadType] = useState<'apex' | 'personal'>('personal');
   const [assignedToId, setAssignedToId] = useState<string>('unassigned');
 
   const reset = () => {
@@ -83,6 +85,7 @@ export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
     setNotes('');
     setMessage('');
     setFollowUpDate('');
+    setLeadType('personal');
     setAssignedToId('unassigned');
   };
 
@@ -105,7 +108,8 @@ export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
         message,
         notes,
         followUpDate: followUpDate ? new Date(followUpDate).toISOString() : null,
-        assignedToId: assignedToId === 'unassigned' ? null : assignedToId,
+        assignedToId: isAdmin ? (assignedToId === 'unassigned' ? null : assignedToId) : null,
+        type: isAdmin ? 'apex' : leadType,
       });
       if (!res.success) {
         toast.error(res.error);
@@ -170,6 +174,25 @@ export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
             </div>
           </div>
 
+          {!isAdmin && (
+            <div className="grid gap-2">
+              <Label>Lead type</Label>
+              <Select value={leadType} onValueChange={(v) => setLeadType(v as 'apex' | 'personal')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">
+                    Personal — only visible to you
+                  </SelectItem>
+                  <SelectItem value="apex">
+                    Apex — shared with the team
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label>Source</Label>
@@ -218,22 +241,24 @@ export function CreateLeadDialog({ open, onOpenChange, agents }: Props) {
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label>Assigned agent</Label>
-            <Select value={assignedToId} onValueChange={setAssignedToId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {agents.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isAdmin && (
+            <div className="grid gap-2">
+              <Label>Assigned agent</Label>
+              <Select value={assignedToId} onValueChange={setAssignedToId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {agents.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="lead-property">Property interest</Label>
