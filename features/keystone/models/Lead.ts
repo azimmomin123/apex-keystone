@@ -43,8 +43,23 @@ export const Lead = list({
   },
   hooks: {
     resolveInput: async ({ operation, resolvedData, inputData, context }) => {
-      if (operation !== 'create') return resolvedData
       const session = context.session
+
+      if (operation === 'update') {
+        // Non-admins cannot change the lead type after creation.
+        // Without this guard, a non-admin could call updateLead({ type: 'personal' })
+        // on an Apex lead they were assigned by an admin and silently demote it,
+        // removing it from the admin's view permanently.
+        if (session && session.data?.isAdmin !== true) {
+          const clientType = (inputData as { type?: string } | undefined)?.type
+          if (clientType !== undefined) {
+            throw new Error('You cannot change the lead type after creation.')
+          }
+        }
+        return resolvedData
+      }
+
+      if (operation !== 'create') return resolvedData
       if (!session || session.data?.isAdmin === true) return resolvedData
 
       // Non-admin create: force assignedTo to the caller's own Agent.
